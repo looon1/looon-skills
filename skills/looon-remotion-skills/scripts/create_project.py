@@ -22,6 +22,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--accent-color", default="#f6bc35")
     parser.add_argument("--ink-color", default="#17140f")
     parser.add_argument("--paper-color", default="#fffaf0")
+    parser.add_argument(
+        "--background-motion",
+        choices=("left-to-right", "right-to-left", "none"),
+        default="left-to-right",
+    )
+    parser.add_argument("--background-travel", type=float, default=120)
     return parser.parse_args()
 
 
@@ -44,6 +50,10 @@ def main() -> int:
     theme["palette"]["accent"] = args.accent_color
     theme["palette"]["ink"] = args.ink_color
     theme["palette"]["paper"] = args.paper_color
+    theme["background"]["motion"]["enabled"] = args.background_motion != "none"
+    if args.background_motion != "none":
+        theme["background"]["motion"]["direction"] = args.background_motion
+    theme["background"]["motion"]["distance"] = args.background_travel
 
     if args.background_image:
         source = args.background_image.expanduser().resolve()

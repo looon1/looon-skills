@@ -308,12 +308,23 @@ const Subtitle: React.FC = () => {
 
 export const CowartFlow: React.FC = () => {
   const frame = useCurrentFrame();
+  const {durationInFrames} = useVideoConfig();
   const backgroundImage =
     theme.background.mode === 'image' && theme.background.image
       ? `linear-gradient(rgba(255,250,240,${theme.background.overlayOpacity}), rgba(255,250,240,${theme.background.overlayOpacity})), url("${staticFile(theme.background.image)}")`
       : theme.background.mode === 'grid'
         ? 'linear-gradient(rgba(191,164,109,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(191,164,109,.12) 1px, transparent 1px)'
         : 'none';
+  const backgroundProgress = interpolate(
+    frame,
+    [0, durationInFrames - 1],
+    [-theme.background.motion.distance / 2, theme.background.motion.distance / 2],
+    clamp,
+  );
+  const backgroundOffset =
+    theme.background.motion.direction === 'right-to-left'
+      ? -backgroundProgress
+      : backgroundProgress;
   const projectX = interpolate(frame, [95, 125], [520, 245], {
     ...clamp,
     easing: Easing.inOut(Easing.cubic),
@@ -327,15 +338,26 @@ export const CowartFlow: React.FC = () => {
         fontFamily:
           '"PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif',
         backgroundColor: theme.background.color,
-        backgroundImage,
-        backgroundSize:
-          theme.background.mode === 'image'
-            ? theme.background.fit
-            : `${theme.background.gridSize}px ${theme.background.gridSize}px`,
-        backgroundPosition: theme.background.position,
-        backgroundRepeat: theme.background.mode === 'image' ? 'no-repeat' : 'repeat',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          inset: -90,
+          backgroundColor: theme.background.color,
+          backgroundImage,
+          backgroundSize:
+            theme.background.mode === 'image'
+              ? theme.background.fit
+              : `${theme.background.gridSize}px ${theme.background.gridSize}px`,
+          backgroundPosition: theme.background.position,
+          backgroundRepeat: theme.background.mode === 'image' ? 'no-repeat' : 'repeat',
+          transform: `translateX(${
+            theme.background.motion.enabled ? backgroundOffset : 0
+          }px) scale(${theme.background.motion.scale})`,
+          transformOrigin: 'center',
+        }}
+      />
       <div
         style={{
           position: 'absolute',

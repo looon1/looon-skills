@@ -25,7 +25,9 @@ python3 scripts/create_project.py \
   --background-image /absolute/path/to/background.png \
   --background-color '#fffaf0' \
   --accent-color '#f6bc35' \
-  --ink-color '#17140f'
+  --ink-color '#17140f' \
+  --background-motion left-to-right \
+  --background-travel 120
 ```
 
 Omit `--background-image` to use the built-in grid-paper background. Use `--background-mode solid` for a plain background.
@@ -37,6 +39,7 @@ Omit `--background-image` to use the built-in grid-paper background. Use `--back
 - Use 1920×1080 at 30fps unless the user requests another format.
 - Preserve thick outlines, offset hard shadows, restrained colors, and staged connector growth.
 - Maintain readable contrast when a background image is supplied. Raise `background.overlayOpacity` when needed.
+- Move the background slowly from left to right by default. Keep an oversized background layer so motion never reveals an empty edge.
 - Treat the presenter layer as optional. Do not invent a real person asset.
 - Do not commit `node_modules/` or rendered working files unless the user explicitly requests example outputs.
 

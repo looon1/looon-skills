@@ -6,7 +6,13 @@
     "fit": "cover",
     "position": "center",
     "overlayOpacity": 0.24,
-    "gridSize": 34
+    "gridSize": 34,
+    "motion": {
+      "enabled": true,
+      "direction": "left-to-right",
+      "distance": 120,
+      "scale": 1.02
+    }
   },
   "palette": {
     "paper": "#fffaf0",
