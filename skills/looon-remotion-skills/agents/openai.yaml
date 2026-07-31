@@ -1,0 +1,4 @@
+interface:
+  display_name: "Looon Remotion Skills"
+  short_description: "Reusable Remotion scenes with swappable backgrounds"
+  default_prompt: "Use $looon-remotion-skills to create a Remotion explainer using my background image and brand colors."

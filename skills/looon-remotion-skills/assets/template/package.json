@@ -1,0 +1,20 @@
+{
+  "name": "looon-remotion-explainer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts CowartFlow out/cowart-flow-demo.mp4 --codec=h264 --crf=18",
+    "still": "remotion still src/index.ts CowartFlow out/cowart-flow-preview.png --frame=245"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.503",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.503"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "typescript": "5.9.3"
+  }
+}

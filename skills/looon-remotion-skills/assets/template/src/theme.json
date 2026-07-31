@@ -1,0 +1,17 @@
+{
+  "background": {
+    "mode": "grid",
+    "color": "#fffaf0",
+    "image": null,
+    "fit": "cover",
+    "position": "center",
+    "overlayOpacity": 0.24,
+    "gridSize": 34
+  },
+  "palette": {
+    "paper": "#fffaf0",
+    "ink": "#17140f",
+    "accent": "#f6bc35",
+    "shadow": "#6f6a60"
+  }
+}
