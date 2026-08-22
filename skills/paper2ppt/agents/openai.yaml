@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper2PPT"
+  short_description: "逐 panel 精讲论文，按 Results 论证链生成或预检中文汇报"
+  default_prompt: "Use $paper2ppt to turn this paper into a panel-complete, Results-led Chinese journal-club presentation with speaker notes."

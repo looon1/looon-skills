@@ -1,0 +1,172 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "nature_green_journal_club": {
+      "label_zh": "Nature墨绿·组会精讲版",
+      "status": "user_validated_baseline",
+      "default_density": "compact",
+      "allowed_density": ["compact", "standard"],
+      "default_figure_layout": "panel_first",
+      "allowed_figure_layout": ["panel_first", "mixed", "figure_level"],
+      "palette": {
+        "canvas": "#FFFFFF",
+        "ink": "#1F2E27",
+        "primary": "#006B3C",
+        "secondary": "#EEF6F1",
+        "accent": "#178257",
+        "rule": "#D6E3DC"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L07_full_figure_map", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    },
+    "academic_blue_nav": {
+      "label_zh": "科研蓝·高密度导航",
+      "default_density": "compact",
+      "allowed_density": ["compact", "standard"],
+      "default_figure_layout": "panel_first",
+      "allowed_figure_layout": ["panel_first", "mixed", "figure_level"],
+      "palette": {
+        "canvas": "#FFFFFF",
+        "ink": "#15223A",
+        "primary": "#0B2E6D",
+        "secondary": "#EAF0F8",
+        "accent": "#2C68B1",
+        "rule": "#AEBBD0"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L07_full_figure_map", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    },
+    "journal_white": {
+      "label_zh": "期刊白·极简图证",
+      "default_density": "standard",
+      "allowed_density": ["standard", "airy"],
+      "default_figure_layout": "panel_first",
+      "allowed_figure_layout": ["panel_first", "mixed"],
+      "palette": {
+        "canvas": "#FCFCFB",
+        "ink": "#171A1F",
+        "primary": "#212A3A",
+        "secondary": "#EFF1F2",
+        "accent": "#2F6B8A",
+        "rule": "#C9CDD2"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L08_limitations", "L09_synthesis"]
+    },
+    "editorial_nature": {
+      "label_zh": "Nature编辑部·杂志风",
+      "default_density": "standard",
+      "allowed_density": ["standard", "airy"],
+      "default_figure_layout": "mixed",
+      "allowed_figure_layout": ["panel_first", "mixed", "figure_level"],
+      "palette": {
+        "canvas": "#F5F7F8",
+        "ink": "#13243A",
+        "primary": "#0A294D",
+        "secondary": "#E4EAF0",
+        "accent": "#7896B4",
+        "rule": "#B9C4CF"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L07_full_figure_map", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    },
+    "clinical_blue": {
+      "label_zh": "医学院·蓝色简约",
+      "default_density": "standard",
+      "allowed_density": ["compact", "standard"],
+      "default_figure_layout": "mixed",
+      "allowed_figure_layout": ["panel_first", "mixed", "figure_level"],
+      "palette": {
+        "canvas": "#FFFFFF",
+        "ink": "#17314C",
+        "primary": "#124A88",
+        "secondary": "#EAF2FA",
+        "accent": "#4C89C6",
+        "rule": "#B6C9DB"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L07_full_figure_map", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    },
+    "mono_accent": {
+      "label_zh": "单色高级·紫青酒红",
+      "default_density": "standard",
+      "allowed_density": ["standard", "airy"],
+      "default_figure_layout": "mixed",
+      "allowed_figure_layout": ["panel_first", "mixed"],
+      "default_accent_variant": "purple",
+      "accent_variants": {
+        "purple": "#5A2B83",
+        "teal": "#0F7377",
+        "burgundy": "#7A2944"
+      },
+      "palette": {
+        "canvas": "#FFFFFF",
+        "ink": "#211C27",
+        "primary": "#5A2B83",
+        "secondary": "#F2EDF7",
+        "accent": "#9B6DB6",
+        "rule": "#CFC5D6"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    },
+    "dark_imaging": {
+      "label_zh": "深色影像·显微优先",
+      "default_density": "standard",
+      "allowed_density": ["standard"],
+      "default_figure_layout": "panel_first",
+      "allowed_figure_layout": ["panel_first", "mixed"],
+      "palette": {
+        "canvas": "#0E1621",
+        "ink": "#F3F7FA",
+        "primary": "#234B70",
+        "secondary": "#182635",
+        "accent": "#39B8C5",
+        "rule": "#3D5368"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    },
+    "warm_beige_review": {
+      "label_zh": "暖米白·综述杂志版",
+      "default_density": "standard",
+      "allowed_density": ["standard", "airy"],
+      "default_figure_layout": "mixed",
+      "allowed_figure_layout": ["panel_first", "mixed", "figure_level"],
+      "palette": {
+        "canvas": "#FBF8F1",
+        "ink": "#302A25",
+        "primary": "#765743",
+        "secondary": "#F1E7D8",
+        "accent": "#B47655",
+        "rule": "#D8C7B5"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L07_full_figure_map", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    },
+    "tech_gradient_blue": {
+      "label_zh": "科技蓝·计算生物版",
+      "default_density": "compact",
+      "allowed_density": ["compact", "standard"],
+      "default_figure_layout": "mixed",
+      "allowed_figure_layout": ["panel_first", "mixed", "figure_level"],
+      "palette": {
+        "canvas": "#F7FAFF",
+        "ink": "#10233D",
+        "primary": "#153E8A",
+        "secondary": "#E6F0FF",
+        "accent": "#2E8BCB",
+        "rule": "#B7CBE6"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L07_full_figure_map", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    },
+    "black_red_conference": {
+      "label_zh": "黑白红·学术会议版",
+      "default_density": "standard",
+      "allowed_density": ["standard", "airy"],
+      "default_figure_layout": "panel_first",
+      "allowed_figure_layout": ["panel_first", "mixed"],
+      "palette": {
+        "canvas": "#FFFFFF",
+        "ink": "#161616",
+        "primary": "#202020",
+        "secondary": "#F1F1F1",
+        "accent": "#B31F2B",
+        "rule": "#C8C8C8"
+      },
+      "layouts": ["L01_cover_minimal", "L02_question_context", "L03_method_flow", "L04_figure_full_takeaway", "L05_figure_sidebar_metrics", "L06_paired_panels", "L11_narrow_panel_zoom_strip", "L07_full_figure_map", "L08_limitations", "L09_synthesis", "L10_section_bridge"]
+    }
+  }
+}
