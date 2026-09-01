@@ -1,0 +1,17 @@
+numpy<2
+Pillow>=9
+scikit-image>=0.19
+opencv-python-headless>=4.8
+svgwrite
+svgpathtools
+cssutils
+numba
+torch-tools
+scikit-fmm
+easydict
+visdom
+huggingface-hub
+timm
+lpips
+tqdm
+scipy

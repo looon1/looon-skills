@@ -1,0 +1,2 @@
+fonttools>=4.55,<5
+Pillow>=10,<13
