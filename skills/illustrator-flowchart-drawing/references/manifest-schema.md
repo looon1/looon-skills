@@ -26,11 +26,17 @@ Rectangular objects use `bbox` or `bbox_normalized` with `x`, `y`, `width`, and 
 Complex types are only `semantic_asset`, `asset`, and `subject`. They require a bbox and may contain:
 
 - `crop_padding_px`
+- `background_policy`: `transparent` by default, or `preserve` only when the background belongs to the semantic object
+- optional `background_tolerance`, `background_feather`, `matte_vector_tolerance`, `matte_neutral_luminance`, and `matte_neutral_chroma`
 - `vector_profile`: `rows`, `cols`, `overlap`, `path_num`, `optimize_iter`, `refine_batch_size`
 - `clip_to_bbox`
 - optional `sam3_prompts`, `sam3_boxes`, `sam3_prompt_limits`, and `segmentation_optional`
 
 Before vectorization, `asset_svg`, `source`, `status`, and `vector_valid` may be absent. The pipeline resolves them. After resolution, `source.provider` must equal `supersvg`.
+
+When the ChatGPT web client is used before SuperSVG, the semantic object may also contain `source_enhancement` with `provider: chatgpt-web-imagegen`, `mode: web`, `client: leeguooooo/chatgpt-imagegen`, client version, source crop, generated transparent PNG, prompt record, transparency result, semantic audit decision, and optional audit notes. `generated_png` may be absolute or relative to the manifest. Only `semantic_audit: accepted` with a readable, genuinely transparent RGBA PNG may override the original crop as SuperSVG input. This records intermediate provenance only; the final provider remains private SuperSVG and the generated PNG must not appear in the Master SVG.
+
+Panel fills must be separate direct objects placed earlier in `draw_order`. A resolved transparent asset also records `asset_source_crop`, `asset_crop`, `background_removal`, `background_transparent`, and a matte-removal report beside its SVG. Never encode a panel's pale blue/green/gray field inside multiple semantic assets.
 
 ## Text Manifest
 

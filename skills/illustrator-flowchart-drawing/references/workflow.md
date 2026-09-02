@@ -7,7 +7,9 @@
 - Text manifest schema `1.0`, containing `text_elements`.
 - Output root.
 
-The Scene Manifest may be unresolved. The entrypoint detects missing complex-asset SVGs, crops only those objects, submits them to private SuperSVG in one model load, validates the results, and writes a resolved manifest inside the job directory.
+The Scene Manifest may be unresolved. The entrypoint detects missing complex-asset SVGs, crops only those objects, optionally substitutes a separately audited ChatGPT-web transparent PNG declared under `source_enhancement`, submits only the accepted complex assets to private SuperSVG in one model load, validates the results, and writes a resolved manifest inside the job directory.
+
+Complex crops default to transparent-background processing. The pipeline always preserves an untouched `*-source.png`. Without enhancement it estimates the local border color and emits a color-keyed RGBA crop. With an accepted ChatGPT-web enhancement it validates real alpha, copies the generated PNG into the job, and uses that asset instead. Both routes place transparent pixels on a neutral white inference matte, remove matte-colored vector paint after SuperSVG, and record the removal report. Panel fills are separate native objects composed below all content.
 
 ## One command
 
@@ -48,6 +50,8 @@ There is no whole-frame mode and no alternate vector provider.
 Each run reserves `illustrator-flowchart-N/` and writes:
 
 - `assets/`: complex-asset crops, validated SuperSVG files, and remote job state.
+- `assets/*-source.png`, `assets/*.png`, and `assets/*.matte-removal.json`: untouched crop, transparent model crop, and vector-matte audit.
+- `assets/*-enhanced-source.png`: job-local copy of an accepted ChatGPT-web transparent source, when used.
 - `illustrator-flowchart-N-scene-resolved.json`: emitted when unresolved assets were vectorized.
 - `illustrator-flowchart-N-scene-segmented.json`: emitted only when optional SAM3 contours were requested.
 - `illustrator-flowchart-N-hybrid-base.svg`: direct rule elements plus complex SuperSVG assets.

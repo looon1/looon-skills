@@ -127,6 +127,24 @@ def audit(path: Path, allow_unresolved_assets: bool = False) -> dict[str, Any]:
 
         if object_type in SEMANTIC_TYPES:
             semantic_count += 1
+            enhancement = obj.get("source_enhancement")
+            if enhancement is not None:
+                if not isinstance(enhancement, dict):
+                    errors.append(f"{object_id} source_enhancement must be an object.")
+                elif str(enhancement.get("semantic_audit", "")).lower() == "accepted":
+                    if enhancement.get("provider") != "chatgpt-web-imagegen":
+                        errors.append(f"{object_id} accepted enhancement must use chatgpt-web-imagegen.")
+                    if enhancement.get("mode") != "web":
+                        errors.append(f"{object_id} accepted enhancement must use web mode.")
+                    if enhancement.get("client") != "leeguooooo/chatgpt-imagegen":
+                        errors.append(f"{object_id} accepted enhancement must record client leeguooooo/chatgpt-imagegen.")
+                    if enhancement.get("transparent_rgba") is not True:
+                        errors.append(f"{object_id} accepted enhancement must declare transparent_rgba true.")
+                    generated_png = enhancement.get("generated_png")
+                    if not isinstance(generated_png, str) or not generated_png.strip():
+                        errors.append(f"{object_id} accepted enhancement requires generated_png.")
+                    if not isinstance(enhancement.get("prompt_record"), str) or not str(enhancement.get("prompt_record")).strip():
+                        errors.append(f"{object_id} accepted enhancement requires prompt_record.")
             asset_svg = obj.get("asset_svg")
             if not asset_svg:
                 if not allow_unresolved_assets:

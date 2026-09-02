@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Read-only environment diagnostic for the SuperSVG-only Illustrator流程图绘制 package."""
+"""Read-only environment diagnostic for the Illustrator流程图绘制 package."""
 
 from __future__ import annotations
 
 import argparse
 import importlib.util
 import json
+import os
 import platform
 import shlex
 import shutil
@@ -20,6 +21,7 @@ SUPERSVG_REVISION = "6c3d45b435e0cc7ca0de3976d4d1aef6b50111a1"
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--verify-server", action="store_true")
+    parser.add_argument("--verify-chatgpt-web", action="store_true")
     parser.add_argument("--ssh-target", default="supersvg-server")
     parser.add_argument("--remote-root", default="services/supersvg-eval")
     parser.add_argument("--gpu-index", type=int, default=1)
@@ -43,6 +45,7 @@ def main() -> int:
     for relative in (
         "scripts/run_from_image.py",
         "scripts/deploy_supersvg.py",
+        "scripts/chatgpt_web_image_asset.py",
         "scripts/vectorize_scene_assets.py",
         "scripts/build_hybrid_master.py",
         "scripts/prepare_geometry_cache.py",
@@ -54,6 +57,35 @@ def main() -> int:
         record(f"package_file:{relative}", path.is_file(), str(path))
     magick = shutil.which("magick") or shutil.which("convert")
     record("optional:imagemagick", magick is not None, magick or "needed only for SAM3 masks and render-equivalence QA", required=False)
+
+    configured_client = os.environ.get("CHATGPT_IMAGEGEN_CLI")
+    client_candidates = [
+        Path(configured_client).expanduser() if configured_client else None,
+        Path(shutil.which("chatgpt-imagegen")) if shutil.which("chatgpt-imagegen") else None,
+        Path.home() / ".codex" / "skills" / "chatgpt-imagegen" / "chatgpt-imagegen",
+    ]
+    image_client = next((candidate for candidate in client_candidates if candidate and candidate.is_file()), None)
+    chrome_use = shutil.which("chrome-use")
+    record(
+        "optional:chatgpt-imagegen-web-client",
+        image_client is not None,
+        str(image_client) if image_client else "install leeguooooo/chatgpt-imagegen",
+        required=args.verify_chatgpt_web,
+    )
+    record(
+        "optional:chrome-use",
+        chrome_use is not None,
+        chrome_use or "required only for ChatGPT web image enhancement",
+        required=args.verify_chatgpt_web,
+    )
+    if args.verify_chatgpt_web and image_client and chrome_use:
+        result = subprocess.run(
+            [str(image_client), "doctor", "--no-update-check"],
+            text=True, capture_output=True, timeout=30,
+        )
+        output = result.stdout + result.stderr
+        web_ready = "web backend:" in output and "[ok]" in output.split("web backend:", 1)[1].split("gemini backends", 1)[0]
+        record("chatgpt-web-session", web_ready, "ready" if web_ready else "chrome-use, extension, or chatgpt.com login is not ready")
 
     if args.verify_server:
         if not shutil.which("ssh"):

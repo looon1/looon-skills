@@ -1,8 +1,8 @@
 # Illustrator流程图绘制 SuperSVG replacement audit
 
-Audit date: 2026-09-01
+Audit date: 2026-09-02
 
-Package version: `1.0.0`
+Package version: `1.1.0`
 
 Overall result: `PASS_WITH_ENVIRONMENT_LIMITATIONS`
 
@@ -13,9 +13,10 @@ The corrected pipeline is object-routed, not whole-frame model tracing:
 1. A required Scene Manifest classifies every visible object.
 2. Text, lines, arrows, connectors, frames, regions, axes, circles, ellipses, rectangles, polygons, gradients, and other rule elements are constructed directly as native SVG objects.
 3. Only complex semantic crops such as animals, cells, textured proteins, organelles, molecular illustrations, and irregular scientific icons are sent to the private `JTUplayer/SuperSVG` runtime.
-4. The validated complex-asset SVGs are composed with the direct objects in original paint order.
-5. Text is restored as live SVG text from the text manifest.
-6. The Master SVG is validated, converted into an immutable lossless geometry cache, and optionally replayed into Illustrator on macOS or Windows.
+4. A degraded complex crop may optionally be regenerated through `leeguooooo/chatgpt-imagegen --backend web`; the wrapper refuses Codex/API/vendor fallback and requires real PNG alpha plus a separate semantic acceptance decision.
+5. The validated complex-asset SVGs are composed with the direct objects in original paint order.
+6. Text is restored as live SVG text from the text manifest.
+7. The Master SVG is validated, converted into an immutable lossless geometry cache, and optionally replayed into Illustrator on macOS or Windows.
 
 SAM3 remains optional foreground segmentation for complex-asset clipping only. It is not a vector model. The package contains no executable or configuration path to a legacy vector provider.
 
@@ -40,6 +41,8 @@ SAM3 remains optional foreground segmentation for complex-asset clipping only. I
 | SuperSVG deployment planner | PASS | Verify, adapter-refresh, and pinned bootstrap modes completed dry-run command audits without contacting or mutating a server. |
 | Public-package privacy scan | PASS | Private host aliases, IP addresses, personal remote paths, credentials, and local absolute paths were removed from executable source and documentation. |
 | Offline integration fixture | PASS | Direct gradient, dashed rule, arrow, live text, resolved complex asset, disconnected clip, cache schema 5, and zero raster nodes; 6 atoms in 3 batches. |
+| ChatGPT-web source routing fixture | PASS | An accepted transparent RGBA enhancement was copied into the job, trimmed, placed on a white model matte, selected instead of the original crop, and retained with Alpha provenance. |
+| ChatGPT-web wrapper compile/help | PASS | Cross-platform managed-Python bootstrap, forced `web` backend, no automatic model/backend fallback, non-overwrite behavior, and PNG Alpha rejection logic loaded successfully. |
 | Wrong-render rejection | PASS | A stale PNG produced normalized RMSE `0.608953` and was rejected against the `0.055` threshold. |
 | Same-source render control | PASS | A same-source fixture produced normalized RMSE `0.0`. |
 | Real figure object routing | PASS | 54 scene objects: 17 complex SuperSVG assets and 37 direct native objects; no whole-frame model input. |
@@ -53,6 +56,7 @@ SAM3 remains optional foreground segmentation for complex-asset clipping only. I
 ## Environment limitations
 
 - The private SSH endpoint refused the final online diagnostic during this publication audit. The earlier real 17-asset SuperSVG job completed and its state is retained, but the current server state was not re-certified. Run `scripts/deploy_supersvg.py --mode adapters` and a smoke image when the endpoint is reachable.
+- The public `chatgpt-imagegen` client `0.23.6` is installed and its Codex OAuth backend is available, but `chrome-use` is not installed. Therefore the selected ChatGPT `web` backend and true-Alpha behavior were not live-tested in this audit. The upstream client also warns that subscription output does not guarantee transparency; every real run must pass the wrapper's byte-level Alpha gate.
 - The Windows PowerShell/COM path was reviewed and packaged but was not executed on a Windows host during this audit.
 - The Linux core path is platform-neutral Python and completes through Master SVG plus cache, but this audit executed the SVG-only path on macOS rather than a separate Linux host. Illustrator output is intentionally unavailable on Linux.
 - The full 16 MB Master SVG render-equivalence comparison was not rerun because the local ImageMagick SVG renderer exceeded the practical audit window. Small-fixture positive and negative render gates passed, and the full real artifact passed structural validation, cached playback, Illustrator object inspection, and visual export inspection.

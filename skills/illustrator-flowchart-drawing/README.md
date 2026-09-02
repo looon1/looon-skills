@@ -2,7 +2,7 @@
 
 把科研流程图、机制图和技术示意图重建为真正可编辑的 SVG，并在 macOS/Windows 上继续绘制到 Adobe Illustrator。
 
-它不是把整张图片交给模型重新生成。正确的实现是对象分流：文字、线条、箭头、边框、面板背景和基础形状直接创建为原生矢量对象；只有动物、细胞、蛋白纹理、分子插画等复杂图形才裁切后送入私有 SuperSVG。最终按原层级合成、恢复实时文字、验证 SVG，并生成可恢复的 Illustrator 几何缓存。
+它不是把整张图片交给模型重新生成。正确的实现是对象分流：文字、线条、箭头、边框、面板背景和基础形状直接创建为原生矢量对象；只有动物、细胞、蛋白纹理、分子插画等复杂图形才裁切后送入私有 SuperSVG。低清或带背景污染的复杂裁片可以先经 ChatGPT 网页客户端重建为高清透明 PNG，再进入 SuperSVG。最终按原层级合成、恢复实时文字、验证 SVG，并生成可恢复的 Illustrator 几何缓存。
 
 ## 核心架构
 
@@ -10,7 +10,9 @@
 原始图片
   -> Scene Manifest 对象分流
      -> 规则元素：原生 SVG
-     -> 复杂对象：裁切 -> 私有 SuperSVG
+     -> 复杂对象：裁切
+        -> 常规：透明预处理 -> 私有 SuperSVG
+        -> 质量升级：ChatGPT 网页重建 -> Alpha/语义审计 -> 私有 SuperSVG
   -> 混合 Master SVG
   -> 实时文字恢复与矢量审计
   -> 无损几何缓存
@@ -24,6 +26,7 @@ SuperSVG 不处理文字、箭头、连接线、坐标轴、边框或面板。�
 - 科研工作流、实验流程图、机制图、图形摘要和技术架构图。
 - 直接生成实时文字、线条、折线、箭头、圆、椭圆、矩形、区域、线性渐变、虚线和矢量裁切。
 - 复杂对象通过自托管 `JTUplayer/SuperSVG` 转换为真实 SVG 路径。
+- 可选使用公开 MIT 项目 `leeguooooo/chatgpt-imagegen` 的 `web` 后端，把单个低质复杂对象交给已登录的 ChatGPT 网页生成；不调用 Codex 内置生图，也不需要 `OPENAI_API_KEY`。
 - macOS：AppleScript/JSX 续画到已经打开的 Illustrator 文档。
 - Windows：PowerShell/COM 续画到 Illustrator。
 - Linux：完成 Master SVG 和几何缓存；不虚假声称存在 Illustrator 输出。
@@ -44,6 +47,33 @@ Windows 使用：
 ```powershell
 ./setup.ps1
 ```
+
+## 可选：ChatGPT 网页高清透明素材层
+
+此层只用于低清、噪声或底色污染严重的复杂对象，不能处理整图、文字、箭头、框、坐标轴、精确化学结构或面板背景。
+
+安装已审计的公开客户端：
+
+```bash
+npx skills add leeguooooo/chatgpt-imagegen -g
+```
+
+网页后端还需要 `chrome-use`、Chrome 扩展，以及已经登录 `chatgpt.com` 的 Chrome。浏览器桥接属于单独的机器级安装，应在用户明确同意后配置。完成后检查：
+
+```bash
+./setup.sh --verify-chatgpt-web
+```
+
+生成单个参考素材：
+
+```bash
+./scripts/chatgpt_web_image_asset.py \
+  --reference /absolute/path/object-source.png \
+  --prompt "忠实重建这一个科研插图对象；保持方向、轮廓、颜色、数量和关系；输出真实透明 PNG；不要文字、箭头、边框、背景或额外结构" \
+  --output /absolute/path/job/assets/enhanced/object-web.png
+```
+
+包装脚本固定使用 `--backend web`，不会自动回退到 Codex、API 或其他模型。网页客户端下载成功后仍会检查 PNG 的真实 Alpha；RGB、全不透明 RGBA、全透明文件和伪棋盘格都会失败。Alpha 通过只代表背景合格，仍需人工/视觉模型核对科学语义后，才能在 Scene Manifest 中标记为 `accepted`。
 
 ## 最关键：部署 SuperSVG
 
@@ -151,6 +181,7 @@ Windows：
 每次运行生成独立的 `illustrator-flowchart-N/`：
 
 - `assets/`：复杂对象裁片、SuperSVG 结果和远程任务状态。
+- `assets/enhanced/`：可选 ChatGPT 网页源图及 Alpha/来源审计报告。
 - `illustrator-flowchart-N-hybrid-base.svg`：规则元素与复杂对象合成结果。
 - `illustrator-flowchart-N.svg`：恢复实时文字后的 Master SVG。
 - `.illustrator-flowchart-internal/live-cache/`：可恢复几何缓存和进度。
@@ -170,6 +201,7 @@ illustrator-flowchart-drawing/
 ├── setup.sh / setup.ps1
 ├── scripts/
 │   ├── deploy_supersvg.py
+│   ├── chatgpt_web_image_asset.py
 │   ├── run_from_image.py
 │   ├── vectorize_scene_assets.py
 │   └── run_illustrator_flowchart.py
@@ -185,5 +217,6 @@ illustrator-flowchart-drawing/
 - SuperSVG official repository: <https://github.com/sjtuplayer/SuperSVG>
 - Model weights: <https://huggingface.co/JTUplayer/SuperSVG>
 - Paper: *SuperSVG: Superpixel-based Scalable Vector Graphics Synthesis*, CVPR 2024
+- ChatGPT web client: <https://github.com/leeguooooo/chatgpt-imagegen>
 
 本 Skill 只提供对象分流、服务器部署适配、质量闸门、混合 SVG、缓存和 Illustrator 回放逻辑；SuperSVG 上游代码及权重遵循各自项目的许可。

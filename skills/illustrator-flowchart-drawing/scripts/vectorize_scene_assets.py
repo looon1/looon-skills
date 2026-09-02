@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import math
 import shlex
@@ -18,6 +19,117 @@ from PIL import Image, ImageOps
 
 
 SEMANTIC_TYPES = {"semantic_asset", "asset", "subject"}
+
+
+def estimate_border_background(image: Image.Image) -> tuple[int, int, int]:
+    """Estimate a flat local background from quantized border pixels."""
+    rgb = image.convert("RGB")
+    border = max(1, min(rgb.width, rgb.height) // 24)
+    pixels: list[tuple[int, int, int]] = []
+    for y in range(rgb.height):
+        for x in range(rgb.width):
+            if x < border or x >= rgb.width - border or y < border or y >= rgb.height - border:
+                pixels.append(rgb.getpixel((x, y)))
+    quantized = Counter(tuple(min(255, (channel // 8) * 8 + 4) for channel in pixel) for pixel in pixels)
+    return quantized.most_common(1)[0][0] if quantized else (255, 255, 255)
+
+
+def transparent_foreground_crop(
+    image: Image.Image,
+    background: tuple[int, int, int],
+    tolerance: float,
+    feather: float,
+) -> Image.Image:
+    """Color-key the local panel background while keeping a white model matte in hidden RGB."""
+    source = image.convert("RGB")
+    result = Image.new("RGBA", source.size, (255, 255, 255, 0))
+    output = []
+    for red, green, blue in source.getdata():
+        distance = math.dist((red, green, blue), background)
+        if distance <= tolerance:
+            alpha = 0
+        elif feather > 0 and distance < tolerance + feather:
+            alpha = round(255 * (distance - tolerance) / feather)
+        else:
+            alpha = 255
+        # The private SuperSVG loader currently converts to RGB. Premultiply onto
+        # white so transparent panel color never becomes model-visible content.
+        ratio = alpha / 255.0
+        output.append((
+            round(red * ratio + 255 * (1 - ratio)),
+            round(green * ratio + 255 * (1 - ratio)),
+            round(blue * ratio + 255 * (1 - ratio)),
+            alpha,
+        ))
+    result.putdata(output)
+    return result
+
+
+def white_matte_rgba(image: Image.Image) -> Image.Image:
+    """Preserve alpha for audit while making transparent RGB safe for an RGB-only model loader."""
+    rgba = image.convert("RGBA")
+    alpha = rgba.getchannel("A")
+    matte = Image.new("RGB", rgba.size, "white")
+    matte.paste(rgba.convert("RGB"), mask=alpha)
+    result = matte.convert("RGBA")
+    result.putalpha(alpha)
+    return result
+
+
+def trim_transparent_margin(image: Image.Image) -> Image.Image:
+    """Trim excessive empty canvas while retaining a small transparent safety margin."""
+    rgba = image.convert("RGBA")
+    alpha_bbox = rgba.getchannel("A").getbbox()
+    if alpha_bbox is None:
+        raise ValueError("enhanced image contains no visible pixels")
+    left, top, right, bottom = alpha_bbox
+    padding = max(2, round(max(right - left, bottom - top) * 0.025))
+    return rgba.crop((
+        max(0, left - padding),
+        max(0, top - padding),
+        min(rgba.width, right + padding),
+        min(rgba.height, bottom + padding),
+    ))
+
+
+def accepted_enhancement(
+    obj: dict[str, Any],
+    manifest_root: Path,
+    asset_dir: Path,
+    object_id: str,
+) -> tuple[Image.Image, Path, tuple[int, int]] | None:
+    """Load an audited ChatGPT-web result and make a job-local provenance copy."""
+    record = obj.get("source_enhancement")
+    if not isinstance(record, dict) or str(record.get("semantic_audit", "")).lower() != "accepted":
+        return None
+    if record.get("provider") != "chatgpt-web-imagegen" or record.get("mode") != "web":
+        raise ValueError(f"{object_id} accepted enhancement must use chatgpt-web-imagegen in web mode")
+    if record.get("client") != "leeguooooo/chatgpt-imagegen":
+        raise ValueError(f"{object_id} accepted enhancement must record client leeguooooo/chatgpt-imagegen")
+    if record.get("transparent_rgba") is not True:
+        raise ValueError(f"{object_id} accepted enhancement must declare transparent_rgba true")
+    generated_value = record.get("generated_png")
+    if not isinstance(generated_value, str) or not generated_value.strip():
+        raise ValueError(f"{object_id} accepted enhancement requires generated_png")
+    generated_path = Path(generated_value).expanduser()
+    if not generated_path.is_absolute():
+        generated_path = manifest_root / generated_path
+    generated_path = generated_path.resolve(strict=True)
+    with Image.open(generated_path) as opened:
+        if "A" not in opened.getbands():
+            raise ValueError(f"{object_id} enhanced PNG has no alpha channel")
+        rgba = opened.convert("RGBA")
+    alpha_min, alpha_max = rgba.getchannel("A").getextrema()
+    if alpha_min >= 255:
+        raise ValueError(f"{object_id} enhanced PNG is fully opaque rather than transparent")
+    if alpha_max <= 0:
+        raise ValueError(f"{object_id} enhanced PNG is fully transparent")
+    local_copy = asset_dir / f"{object_id}-enhanced-source.png"
+    rgba.save(local_copy)
+    record["workspace_copy"] = str(local_copy)
+    record["alpha_extrema"] = [alpha_min, alpha_max]
+    record["transparent_rgba"] = True
+    return trim_transparent_margin(rgba), local_copy, (alpha_min, alpha_max)
 
 
 def run_checked(command: list[str], timeout: int | None = None) -> str:
@@ -73,6 +185,11 @@ def main() -> int:
     parser.add_argument("--refine-batch-size", type=int, default=8)
     parser.add_argument("--timeout", type=int, default=7200)
     parser.add_argument("--border-px", type=int, default=0)
+    parser.add_argument("--background-tolerance", type=float, default=24.0)
+    parser.add_argument("--background-feather", type=float, default=12.0)
+    parser.add_argument("--matte-vector-tolerance", type=float, default=16.0)
+    parser.add_argument("--matte-neutral-luminance", type=float, default=0.82)
+    parser.add_argument("--matte-neutral-chroma", type=float, default=28.0)
     parser.add_argument("--crop-only", action="store_true")
     parser.add_argument("--per-asset", action="store_true", help="Compatibility mode that reloads SuperSVG for every asset")
     args = parser.parse_args()
@@ -83,6 +200,10 @@ def main() -> int:
         parser.error("quality mode requires --optimize-iter >= 10")
     if args.rows < 1 or args.cols < 1 or args.overlap < 0:
         parser.error("invalid SuperSVG tiling settings")
+    if min(args.background_tolerance, args.background_feather, args.matte_vector_tolerance, args.matte_neutral_chroma) < 0:
+        parser.error("background tolerances must be non-negative")
+    if not 0 <= args.matte_neutral_luminance <= 1:
+        parser.error("matte neutral luminance must be between 0 and 1")
 
     image = args.input_image.resolve(strict=True)
     manifest_path = args.scene_manifest.resolve(strict=True)
@@ -107,14 +228,43 @@ def main() -> int:
             raise ValueError("semantic asset ids may contain only letters, numbers, '-' and '_'")
         left, top, crop_width, crop_height = pixel_bbox(obj, image_width, image_height)
         crop_path = asset_dir / f"{object_id}.png"
+        source_crop_path = asset_dir / f"{object_id}-source.png"
         svg_path = asset_dir / f"{object_id}.svg"
         state_path = asset_dir / f"{object_id}.remote-job.json"
-        crop_image = source_image.crop((left, top, left + crop_width, top + crop_height))
+        original_crop = source_image.crop((left, top, left + crop_width, top + crop_height))
+        original_crop.save(source_crop_path)
+        enhancement = accepted_enhancement(obj, manifest_path.parent, asset_dir, object_id)
+        crop_image = enhancement[0] if enhancement else original_crop
+        background_policy = str(obj.get("background_policy", "transparent")).lower()
+        if background_policy not in {"transparent", "preserve"}:
+            raise ValueError(f"{object_id} background_policy must be transparent or preserve")
+        if enhancement and background_policy != "transparent":
+            raise ValueError(f"{object_id} ChatGPT web enhancement requires background_policy transparent")
+        background = (255, 255, 255) if enhancement else estimate_border_background(crop_image)
+        if enhancement:
+            crop_image = white_matte_rgba(crop_image)
+        elif background_policy == "transparent":
+            crop_image = transparent_foreground_crop(
+                crop_image,
+                background,
+                float(obj.get("background_tolerance", args.background_tolerance)),
+                float(obj.get("background_feather", args.background_feather)),
+            )
         if args.border_px > 0:
-            crop_image = ImageOps.expand(crop_image, border=args.border_px, fill="white")
+            fill = (255, 255, 255, 0) if crop_image.mode == "RGBA" else "white"
+            crop_image = ImageOps.expand(crop_image, border=args.border_px, fill=fill)
         crop_image.save(crop_path)
         obj["crop"] = {"x": left, "y": top, "width": crop_width, "height": crop_height}
         obj["asset_crop"] = str(crop_path)
+        obj["asset_source_crop"] = str(source_crop_path)
+        obj["background_removal"] = {
+            "policy": background_policy,
+            "source": "chatgpt-web-alpha" if enhancement else "local-border-key",
+            "estimated_rgb": list(background),
+            "model_matte": "#ffffff",
+            "raster_tolerance": float(obj.get("background_tolerance", args.background_tolerance)),
+            "feather": float(obj.get("background_feather", args.background_feather)),
+        }
         if args.crop_only:
             continue
         if not args.per_asset:
@@ -138,11 +288,24 @@ def main() -> int:
             "--timeout", str(args.timeout),
         ]
         run_checked(command, timeout=args.timeout + 600)
+        if background_policy == "transparent":
+            matte_report = asset_dir / f"{object_id}.matte-removal.json"
+            run_checked([
+                sys.executable, str(scripts / "strip_vector_matte.py"),
+                "--svg", str(svg_path), "--matte", "#ffffff",
+                "--tolerance", str(float(obj.get("matte_vector_tolerance", args.matte_vector_tolerance))),
+                "--neutral-luminance", str(float(obj.get("matte_neutral_luminance", args.matte_neutral_luminance))),
+                "--neutral-chroma", str(float(obj.get("matte_neutral_chroma", args.matte_neutral_chroma))),
+                "--foreground-mask", str(crop_path),
+                "--max-pale-area", str(float(obj.get("matte_max_pale_area", 0.12))),
+                "--report", str(matte_report),
+            ])
         run_checked([sys.executable, str(scripts / "validate_vector_svg.py"), "--svg", str(svg_path)])
         obj["asset_svg"] = str(svg_path)
         obj["source"] = {"provider": "supersvg", "scope": "complex-asset-crop"}
         obj["status"] = "accepted"
         obj["vector_valid"] = True
+        obj["background_transparent"] = background_policy == "transparent"
         vectorized += 1
 
     if semantic_objects and not args.crop_only and not args.per_asset:
@@ -184,11 +347,24 @@ def main() -> int:
         run_checked(["scp", f"{args.ssh_target}:{remote_output}/*.svg", str(asset_dir)], timeout=600)
         for obj in semantic_objects:
             svg_path = asset_dir / f"{obj['id']}.svg"
+            if str(obj.get("background_policy", "transparent")).lower() == "transparent":
+                matte_report = asset_dir / f"{obj['id']}.matte-removal.json"
+                run_checked([
+                    sys.executable, str(scripts / "strip_vector_matte.py"),
+                    "--svg", str(svg_path), "--matte", "#ffffff",
+                    "--tolerance", str(float(obj.get("matte_vector_tolerance", args.matte_vector_tolerance))),
+                    "--neutral-luminance", str(float(obj.get("matte_neutral_luminance", args.matte_neutral_luminance))),
+                    "--neutral-chroma", str(float(obj.get("matte_neutral_chroma", args.matte_neutral_chroma))),
+                    "--foreground-mask", str(asset_dir / f"{obj['id']}.png"),
+                    "--max-pale-area", str(float(obj.get("matte_max_pale_area", 0.12))),
+                    "--report", str(matte_report),
+                ])
             run_checked([sys.executable, str(scripts / "validate_vector_svg.py"), "--svg", str(svg_path)])
             obj["asset_svg"] = str(svg_path)
             obj["source"] = {"provider": "supersvg", "scope": "complex-asset-crop", "batch_job_id": job_id}
             obj["status"] = "accepted"
             obj["vector_valid"] = True
+            obj["background_transparent"] = str(obj.get("background_policy", "transparent")).lower() == "transparent"
             vectorized += 1
         (asset_dir / "batch-remote-job.json").write_text(json.dumps({
             "schema_version": "1.0",

@@ -1,5 +1,5 @@
 interface:
   display_name: "Illustrator流程图绘制"
-  short_description: "基础元素原生绘制，复杂科研图形用私有 SuperSVG"
-  default_prompt: "使用 $illustrator-flowchart-drawing，先按对象分流：文字、线条、箭头、框和基础形状直接创建，仅复杂科研图形交给我的私有 SuperSVG；保留全部细节并在可无损支持时续画到 Illustrator。"
+  short_description: "规则元素原生绘制，复杂素材可经 ChatGPT 网页透明增强"
+  default_prompt: "使用 $illustrator-flowchart-drawing 按对象分流；文字、箭头、框和背景原生创建，仅低质复杂素材可经 ChatGPT 网页客户端生成透明 PNG，再交给私有 SuperSVG 并完成审计。"
   brand_color: "#2457C5"

@@ -85,6 +85,46 @@ def main() -> int:
         assert any(len((atom.get("clip") or {}).get("subpaths", [])) > 1 for atom in cache["atoms"])
         master = Path(payload["svg"])
         assert "<image" not in master.read_text(encoding="utf-8")
+
+        enhanced = root / "generated-transparent.png"
+        enhanced_image = Image.new("RGBA", (96, 96), (255, 255, 255, 0))
+        enhanced_image.paste((105, 162, 131, 255), (24, 18, 72, 78))
+        enhanced_image.save(enhanced)
+        enhancement_scene = root / "enhancement-scene.json"
+        enhancement_scene.write_text(json.dumps({
+            "schema_version": "1.0",
+            "canvas_size": {"width": 400, "height": 300},
+            "objects": [{
+                "id": "enhanced-complex", "type": "semantic_asset", "draw_order": 1,
+                "coordinate_space": "absolute", "bbox": {"x": 40, "y": 35, "width": 80, "height": 70},
+                "background_policy": "transparent",
+                "source_enhancement": {
+                    "provider": "chatgpt-web-imagegen", "mode": "web",
+                    "client": "leeguooooo/chatgpt-imagegen", "client_version": "0.23.6",
+                    "source_crop": "reference.png", "generated_png": str(enhanced),
+                    "prompt_record": "faithful isolated transparent scientific asset",
+                    "transparent_rgba": True, "semantic_audit": "accepted",
+                },
+            }],
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        enhancement_output = root / "enhancement-resolved.json"
+        enhancement_assets = root / "enhancement-assets"
+        enhancement_result = subprocess.run([
+            sys.executable, str(scripts / "vectorize_scene_assets.py"),
+            "--input-image", str(image), "--scene-manifest", str(enhancement_scene),
+            "--output-manifest", str(enhancement_output), "--asset-dir", str(enhancement_assets),
+            "--crop-only",
+        ], text=True, capture_output=True, timeout=180)
+        if enhancement_result.returncode != 0:
+            raise RuntimeError(enhancement_result.stderr.strip() or enhancement_result.stdout.strip())
+        enhanced_object = json.loads(enhancement_output.read_text(encoding="utf-8"))["objects"][0]
+        assert Path(enhanced_object["asset_source_crop"]).is_file()
+        assert Path(enhanced_object["source_enhancement"]["workspace_copy"]).is_file()
+        assert enhanced_object["source_enhancement"]["alpha_extrema"] == [0, 255]
+        assert enhanced_object["background_removal"]["source"] == "chatgpt-web-alpha"
+        with Image.open(enhanced_object["asset_crop"]) as enhanced_crop:
+            assert enhanced_crop.mode == "RGBA"
+            assert enhanced_crop.width < 96 and enhanced_crop.height < 96
         print(json.dumps({
             "ok": True,
             "pipeline": payload["pipeline"],
@@ -92,6 +132,7 @@ def main() -> int:
             "atoms": cache["total_atoms"],
             "batches": len(cache["batches"]),
             "raster_nodes": 0,
+            "chatgpt_web_enhancement": "accepted-transparent-source-selected",
         }, ensure_ascii=False))
     return 0
 
