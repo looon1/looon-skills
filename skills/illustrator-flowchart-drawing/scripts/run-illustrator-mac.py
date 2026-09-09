@@ -11,7 +11,9 @@ APPLESCRIPT = '''on run argv
     set scriptFile to POSIX file (item 1 of argv)
     tell application id "com.adobe.illustrator"
         if item 2 of argv is "activate" then activate
-        do javascript scriptFile
+        with timeout of 240 seconds
+            do javascript scriptFile
+        end timeout
     end tell
 end run
 '''
@@ -19,7 +21,7 @@ end run
 
 def execute(script, activate=False):
     subprocess.run(['osascript', '-', str(script), 'activate' if activate else 'keep'],
-                   input=APPLESCRIPT, text=True, check=True, timeout=180,
+                   input=APPLESCRIPT, text=True, check=True, timeout=270,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
@@ -78,7 +80,7 @@ def run(job, stage):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--job-dir', required=True, type=Path)
-    parser.add_argument('--stage', required=True, choices=['inspect', 'trace', 'rebuild', 'verify', 'live'])
+    parser.add_argument('--stage', required=True, choices=['inspect', 'trace', 'rebuild', 'structure', 'verify', 'live'])
     args = parser.parse_args()
     try:
         run(args.job_dir.resolve(), args.stage)

@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+import shutil
 
 from PIL import Image
 
@@ -28,7 +29,44 @@ def color(value):
     return value
 
 
-def prepare(source, job, output, manifest=None):
+def native_layout(data, size):
+    if data is None:
+        return None
+    names=set()
+    for item in data['elements']:
+        if not isinstance(item.get('name'),str) or not item['name'] or item['name'] in names:
+            raise ValueError('Native element names must be unique and nonempty')
+        names.add(item['name'])
+        if item['type'] in ('rect','ellipse'):
+            bounds(item['bounds'],size,item['name'])
+        elif item['type']=='path':
+            if len(item['points'])<2:
+                raise ValueError('Native paths need at least two anchors')
+            for point in item['points']:
+                if len(point) not in (1,3) or any(len(p)!=2 or any(type(x) not in (int,float) for x in p) for p in point):
+                    raise ValueError('Each native point needs an anchor and optional two handles')
+        else:
+            raise ValueError('Native element type must be rect, ellipse or path')
+        if item.get('stroke') is not None:
+            color(item['stroke'])
+            if type(item.get('width',2)) not in (int,float) or item.get('width',2)<=0:
+                raise ValueError('Stroke width must be positive')
+        if item.get('dashes') is not None and (not item['dashes'] or any(type(x) not in (int,float) or x<=0 for x in item['dashes'])):
+            raise ValueError('Dash lengths must be positive')
+        if item.get('arrow') and (item['type']!='path' or not item.get('stroke') or len(item['arrow'])!=2 or any(x<=0 for x in item['arrow'])):
+            raise ValueError('Arrows need a stroked path and positive head dimensions')
+        fill=item.get('fill')
+        if isinstance(fill,list):color(fill)
+        elif fill is not None:
+            if len(fill['stops'])<2 or any(not 0<=s[0]<=100 for s in fill['stops']) or fill['length']<=0:
+                raise ValueError('Invalid linear gradient')
+            for stop in fill['stops']:color(stop[1])
+    for region in data.get('regions',[]):bounds(region['bounds'],size,region['name'])
+    for rule in data.get('removeTraced',[]):bounds(rule['bounds'],size,rule['group'])
+    return dict(elements=data['elements'],regions=data.get('regions',[]),removeTraced=data.get('removeTraced',[]))
+
+
+def prepare(source, job, output, manifest=None, editable_source=None):
     source, job, output = source.resolve(), job.resolve(), output.resolve()
     with Image.open(source) as original:
         if original.mode != 'RGB' or getattr(original, 'n_frames', 1) != 1:
@@ -52,7 +90,7 @@ def prepare(source, job, output, manifest=None):
 
     labels, groups, repair_boxes = [], [], []
     preview = None
-    if data.get('labels'):
+    if any(item.get('background') is None for item in data.get('labels',[])):
         preview = Image.open(job / 'trace-preview.png').convert('RGB')
         if preview.size != pixels.size:
             raise ValueError('Trace preview dimensions differ from source')
@@ -66,7 +104,7 @@ def prepare(source, job, output, manifest=None):
         if type(padding) not in (int, float) or not 0 <= padding <= 10:
             raise ValueError('Text padding must be between 0 and 10 pixels')
         repair = bounds([b[0]-padding, b[1]-padding, b[2]+padding, b[3]+padding], pixels.size, item['text']+' repair')
-        if any(intersects(repair, other) for other in repair_boxes):
+        if editable_source is None and any(intersects(repair, other) for other in repair_boxes):
             raise ValueError('Text repair areas overlap; adjust label bounds')
         repair_boxes.append(repair)
         bg = item.get('background')
@@ -87,8 +125,15 @@ def prepare(source, job, output, manifest=None):
         groups.append(dict(name=item['name'], bounds=b))
     config = dict(job=job.as_posix(), output=output.as_posix(), width=pixels.width, height=pixels.height,
                   labels=labels, groups=groups, preset=data.get('preset'))
+    if data.get('nativeLayout') is not None:
+        config['nativeLayout']=native_layout(data['nativeLayout'],pixels.size)
+    if editable_source is not None:
+        target=job/'source.ai'
+        if target.exists() and target.read_bytes()!=editable_source.read_bytes():
+            raise ValueError('Editable source changed; use a new job directory')
+        if not target.exists():shutil.copy2(editable_source,target)
     native = Path(__file__).with_name('native.jsx').read_text(encoding='utf-8')
-    for stage in ['inspect', 'trace', 'rebuild', 'verify', 'live']:
+    for stage in ['inspect', 'trace', 'rebuild', 'structure', 'verify', 'live']:
         script = native.replace('__CONFIG__', json.dumps(config, ensure_ascii=True)).replace('__STAGE__', json.dumps(stage))
         (job / f'{stage}.jsx').write_text(script, encoding='ascii')
     (job / 'job.json').write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -102,5 +147,6 @@ if __name__ == '__main__':
     parser.add_argument('--job-dir', required=True, type=Path)
     parser.add_argument('--output-dir', required=True, type=Path)
     parser.add_argument('--manifest', type=Path)
+    parser.add_argument('--editable-source', type=Path, help='Verified AI to recompose with native geometry in a fresh output directory')
     args = parser.parse_args()
-    prepare(args.source, args.job_dir, args.output_dir, args.manifest)
+    prepare(args.source, args.job_dir, args.output_dir, args.manifest,args.editable_source)

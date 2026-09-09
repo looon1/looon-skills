@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory=$true)][string]$JobDir,
-    [Parameter(Mandatory=$true)][ValidateSet('inspect','trace','rebuild','verify','live')][string]$Stage
+    [Parameter(Mandatory=$true)][ValidateSet('inspect','trace','rebuild','structure','verify','live')][string]$Stage
 )
 $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'This launcher requires Windows with desktop Illustrator.' }

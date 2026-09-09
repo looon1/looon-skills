@@ -1,6 +1,6 @@
 # Illustrator 参考图重建与实时绘制
 
-把参考图重建为可编辑 AI：插画为矢量路径，所有可辨认文字恢复为 Illustrator 原生文本对象。运行系统启动器的 `live` 阶段后先显示空白画板和控制面板，点击 `Start / Resume` 开始；支持暂停与单步绘制。系统启动器逐批调用 Illustrator，并在应用外等待半秒，让画布和控件在批次之间响应。
+把参考图重建为可编辑 AI：复杂插画为矢量路径，文字、框线、箭头、虚线及简单背景使用原生对象。运行系统启动器的 `live` 阶段后先显示空白画板和控制面板，点击 `Start / Resume` 开始；支持暂停与单步绘制。系统启动器逐批调用 Illustrator，并在应用外等待半秒，让画布和控件在批次之间响应。
 
 本版本直接替换旧 SuperSVG 工作流，使用本机 Illustrator 描摹和 JSX；不需要服务器部署或模型权重。保留原 Skill 名称 `illustrator-flowchart-drawing`。
 
@@ -26,7 +26,7 @@ py -m venv .venv
 .\.venv\Scripts\python.exe scripts\self_test.py
 ```
 
-执行顺序为 `inspect → trace → 编写文字清单 → rebuild → verify → live`。实时阶段必须运行系统启动器：Mac 用 `scripts/run-illustrator-mac.py --job-dir /absolute/job --stage live`，Windows 用 `scripts/run-illustrator.ps1 -JobDir C:\Figures\job -Stage live`；单独运行 `live.jsx` 只准备空白画板和控制面板。完整入口见 [SKILL.md](SKILL.md)，Windows 命令见 [Windows 与实时绘制](references/windows-live.md)。`trace.ai` 的文字仍是描摹路径，只用于内部检查，不能交付为成品。
+执行顺序为 `inspect → trace → 编写文字与 nativeLayout 清单 → rebuild → verify → live`。已有可编辑 AI 时可通过 `--editable-source` 和 `structure` 阶段重组。实时阶段必须运行系统启动器：Mac 用 `scripts/run-illustrator-mac.py --job-dir /absolute/job --stage live`，Windows 用 `scripts/run-illustrator.ps1 -JobDir C:\Figures\job -Stage live`；单独运行 `live.jsx` 只准备空白画板和控制面板。完整入口见 [SKILL.md](SKILL.md)，Windows 命令见 [Windows 与实时绘制](references/windows-live.md)。`trace.ai` 的文字仍是描摹路径，只用于内部检查，不能交付为成品。
 
 ## 输出与验证
 
@@ -35,6 +35,6 @@ py -m venv .venv
 - `figure-live.ai`、`preview-live.png`：逐步创建得到的独立成品。
 - 任务目录中的各阶段日志：核对文本内容、路径、分组与零位图。
 
-2026-09-09 在 macOS Illustrator 29.5.1 中以一张复杂机制图实测：468 批生成 3,674 条路径与 45 个原生文本框；观察了空白及多个中途画布，并验证暂停、单步与继续。保存回读后的预览与完成时的预览逐像素一致，希腊字母与下标已检查。每个新任务仍须按 SKILL.md 验收。Windows 提供同一 JSX 配合 PowerShell/COM 启动器，尚未在 Windows 实机运行。逐步绘制使用预先核验的矢量几何，不代表模拟人类每一笔动作。
+2026-09-10 在 macOS Illustrator 29.5.1 中以复杂机制图验证：首批完整创建 45 个原生文本框及框线、箭头、虚线和背景，复杂插画为零；矩形框有 4 个锚点，虚线保留原生描边属性。后续只逐步创建复杂插画，并通过暂停、单步与继续检查。最终成品包含 2,290 条路径、45 个文本框和 20 个插画组，位图及置入对象为零；保存回读后的 PNG 与完成稿逐像素一致。13 项准备脚本测试通过。每个新任务仍须按 SKILL.md 验收。Windows 提供同一 JSX 配合 PowerShell/COM 启动器，尚未在 Windows 实机运行。逐步绘制使用预先核验的矢量几何，不代表模拟人类每一笔动作。
 
 文字内容与几何关系需要逐项对照原图；字体与阴影可能有细微差异。文件可编辑不等于原图像素级一致。适用输入为单页不透明 RGB 图像；透明、CMYK、特殊效果与复杂剪切需要单独处理。

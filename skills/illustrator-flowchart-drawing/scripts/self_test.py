@@ -93,5 +93,39 @@ class PreparationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'dimensions'):
             self.run_prepare({'labels':[self.label()]})
 
+    def test_native_geometry_preserved_in_generated_job(self):
+        self.run_prepare()
+        Image.open(self.source).save(self.job/'trace-preview.png')
+        layout={'elements':[{'name':'Frame','type':'rect','bounds':[5,5,95,75],'stroke':[190,50,40],'width':3},
+                            {'name':'Dashed connector','type':'path','points':[[[10,40]],[[90,60]]],'stroke':[40,40,40],'dashes':[5,4]}]}
+        self.run_prepare({'labels':[self.label()], 'nativeLayout':layout})
+        config=json.loads((self.job/'job.json').read_text())
+        self.assertEqual(config['nativeLayout']['elements'],layout['elements'])
+        self.assertTrue((self.job/'structure.jsx').read_bytes().isascii())
+
+    def test_native_dash_and_duplicate_names_rejected(self):
+        item={'name':'Frame','type':'rect','bounds':[1,1,99,79],'stroke':[0,0,0]}
+        with self.assertRaisesRegex(ValueError,'Dash lengths'):
+            module.native_layout({'elements':[dict(item,dashes=[5,0])]},(100,80))
+        with self.assertRaisesRegex(ValueError,'unique'):
+            module.native_layout({'elements':[item,item]},(100,80))
+
+    def test_editable_source_cannot_be_silently_replaced(self):
+        native=self.base/'input.ai';native.write_bytes(b'first native fixture')
+        module.prepare(self.source,self.job,self.output,editable_source=native)
+        self.assertEqual((self.job/'source.ai').read_bytes(),native.read_bytes())
+        native.write_bytes(b'different native fixture')
+        with self.assertRaisesRegex(ValueError,'Editable source changed'):
+            module.prepare(self.source,self.job,self.output,editable_source=native)
+
+    def test_editable_source_does_not_repair_existing_text(self):
+        native=self.base/'input.ai';native.write_bytes(b'editable native fixture')
+        manifest=self.base/'labels.json'
+        labels=[dict(self.label(text),background=[255,255,255]) for text in ['O','2']]
+        manifest.write_text(json.dumps({'labels':labels}))
+        module.prepare(self.source,self.job,self.output,manifest,editable_source=native)
+        result=json.loads((self.job/'job.json').read_text())
+        self.assertEqual([x['text'] for x in result['labels']],['O','2'])
+
 
 if __name__=='__main__': unittest.main()

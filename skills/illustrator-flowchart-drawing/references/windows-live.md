@@ -13,7 +13,7 @@ py -m venv .venv
 .\scripts\run-illustrator.ps1 -JobDir C:\Figures\work\job1 -Stage inspect
 .\scripts\run-illustrator.ps1 -JobDir C:\Figures\work\job1 -Stage trace
 
-# 核对描摹预览并编写 labels.json 后，再准备重建脚本。
+# 核对描摹预览并编写含 labels、groups、nativeLayout 的清单后，再准备重建脚本。
 .\.venv\Scripts\python.exe .\scripts\prepare_job.py C:\Figures\reference.png `
   --job-dir C:\Figures\work\job1 --output-dir C:\Figures\output\figure1 `
   --manifest C:\Figures\work\labels.json
@@ -28,7 +28,7 @@ py -m venv .venv
 
 ## Illustrator 画布中的实时绘制
 
-`live.jsx` 先读取源稿的贝塞尔锚点、控制柄和逐字符字体属性，生成任务目录内的 `live-steps-*/*.jsx`。它创建独立空白文档和 `Illustrator Live Drawing` 面板；实际播放由系统启动器逐批调用 Illustrator。每批最多 8 项创建操作，启动器在每批结束后等待 500 ms，再提交下一批。等待发生在 Illustrator 进程之外，应用才有明确的空闲时间更新画布和处理按钮。
+`live.jsx` 先读取源稿的贝塞尔锚点、控制柄和逐字符字体属性，生成任务目录内的 `live-steps-*/*.jsx`。它创建独立空白文档和 `Illustrator Live Drawing` 面板；实际播放由系统启动器逐批调用 Illustrator。第一批一次创建完整的原生文本、框线、箭头、虚线与背景；后续复杂插画每批最多 8 项操作。启动器在每批结束后等待 500 ms，再提交下一批。等待发生在 Illustrator 进程之外，应用才有明确的空闲时间更新画布和处理按钮。
 
 - `Start / Resume`：开始或继续。
 - `Pause`：停止提交下一批，已提交的一批先完成。
@@ -46,7 +46,7 @@ python3 /path/to/skill/scripts/run-illustrator-mac.py \
   --job-dir /absolute/work/figure-job --stage live
 ```
 
-Windows 运行上方 PowerShell 的 `-Stage live`，使用 Illustrator COM 接口。两个启动器都保持运行，允许用户在 Illustrator 里暂停、单步和继续。`READY` 只代表准备完毕；必须等 `live.log` 出现 `DONE` 并核对保存文件。Mac 的 Ctrl+C 会暂停启动器；重新运行前先核对当次批次的游标和错误记录。
+Windows 运行上方 PowerShell 的 `-Stage live`，使用 Illustrator COM 接口。两个启动器都保持运行，允许用户在 Illustrator 里暂停、单步和继续。首个 Step 会一次完成全部原生结构和文字，后续 Step 每次只推进一小批复杂插画。`READY` 只代表准备完毕；必须等 `live.log` 出现 `DONE` 并核对保存文件。Mac 的 Ctrl+C 会暂停启动器；重新运行前先核对当次批次的游标和错误记录。
 
 若当前电脑控制工具要求对 AppleScript 作明确授权，执行 Mac 启动器前遵循该限制；用户已明确授权后不重复询问。不要改用未获允许的 UI 自动化方式，也不要修改系统安全或脚本执行策略。
 
@@ -54,6 +54,6 @@ Windows 运行上方 PowerShell 的 `-Stage live`，使用 Illustrator COM 接�
 
 - 将 Illustrator 窗口放到用户希望观看的显示器，调整到适合画板大小的视图。
 - 运行前保留源 AI；`figure-live.ai` 和 `preview-live.png` 另存。已有同名实时稿时使用新的输出目录或经用户授权处理旧文件。
-- 播放脚本面向本 Skill 生成的 RGB 填充路径与点文字（保留逐字符字体、字号、缩放、基线与颜色）。复合路径、裁切组、渐变、实时效果、特殊混合或插件对象不在此入口的验证范围内；遇到不支持的对象应另写适配器，不能静默丢弃。
-- 先确认空白画板，再观察两个不同完成度的画布；暂停后等待一批结束，确认进度稳定，单步后只增加一批，继续至完成。不要只截图进度面板。
+- 播放脚本面向本 Skill 生成的 RGB 路径、清单声明的线性渐变、原生描边/虚线和点文字（保留逐字符字体、字号、缩放、基线与颜色）。复合路径、裁切组、未声明的渐变、实时效果、特殊混合或插件对象不在此入口的验证范围内；遇到不支持的对象应另写适配器，不能静默丢弃。
+- 先确认空白画板，单步第一批检查完整原生结构和文本、零复杂插画；再观察两个不同完成度的插画画布。暂停后等待一批结束，确认进度稳定，单步后只增加一批，继续至完成。不要只截图进度面板。
 - 验证实时稿与源 AI 的文字、路径数量一致，并比较两张导出 PNG。数量相同并不能排除堆叠或色彩错误，视觉检查仍必需。
