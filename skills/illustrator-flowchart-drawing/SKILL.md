@@ -21,7 +21,7 @@ description: 将参考图片中的流程图、信息图和插画重建为 Adobe 
 1. **准备与描摹**：检查原图，运行下方准备命令。在 Illustrator 执行生成的 `inspect.jsx`，查看 `environment.txt` 中的预设和字体，再执行 `trace.jsx`。检查 `trace.log` 和 `trace-preview.png`。脚本使用原图像素值生成独立 TIFF，再用 `app.open()` 获得 RasterItem；这条路径曾成功解决 PNG 置入失败，但失败根因未被证实。
 2. **文字与分组**：根据实际原图创建文字和插画区域清单。读 [清单格式](references/manifest.md)，不要复制示例坐标。再次准备任务并传入 `--manifest`，执行 `rebuild.jsx`。所有可辨认文字均恢复为原生 `TextFrame`，包括插画内缩写、结构式字母、上下标和符号。单行标签使用点文字文本对象，可以直接编辑内容与字体；不要将最终文字转曲。
 3. **验收**：执行 `verify.jsx`，重新打开保存的 AI，检查文本内容、符号、画板、路径数及位图数。读取 `verify.log`，并在 Illustrator 中观察成品、查看导出的 PNG；仅有“保存成功”不算通过。人工对照原图确认清单没有漏字；仅统计清单内文字不能证明覆盖了全部文字。最终选择一处标题和一处插画小字，确认 Illustrator 显示字符、字体与段落属性。
-4. **实时绘制（用户要求时）**：在验收后的成品基础上执行 `live.jsx`，在一个新画板里按底板、插画、文字的顺序分批创建对象。原稿保留，实时稿另存为 `figure-live.ai`。读 [Windows 与实时绘制](references/windows-live.md)，尤其注意版本验证与可视桌面要求。
+4. **实时绘制（用户要求时）**：在验收后的成品基础上运行 Mac 或 Windows 系统启动器的 `live` 阶段，先出现空白画板和 `Illustrator Live Drawing` 面板；点击 `Start / Resume` 后，按底板、插画、文字的顺序分批创建对象。必须实际观察空白和两个不同进度的画布，测试 `Pause` 停住、`Step` 只前进一批、再继续。只有最终导出一致不能证明实时可见。`READY` 只表示面板就绪，日志以 `DONE` 结束才表示成品完成。原稿保留，实时稿另存为 `figure-live.ai`。读 [系统启动器与实时绘制](references/windows-live.md)，尤其注意版本验证与可视桌面要求。只打开 `live.jsx` 或成品文件，不能算完成实时演示。
 
 准备命令（Python 需要 Pillow）：
 

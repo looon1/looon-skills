@@ -1,25 +1,34 @@
 #target illustrator
+#targetengine "looon_live_drawing"
 // Template; execute generated job scripts, not this file directly.
 (function () {
     var cfg = __CONFIG__, stage = __STAGE__;
+    if(stage==='live' && $.global.looonLivePanel && !$.global.looonLivePanel.closed && $.global.looonLivePanel.job===cfg.job) {
+        $.global.looonLivePanel.window.show();$.global.looonLivePanel.window.active=true;
+        var resumed=new File(cfg.job+'/live.log');resumed.encoding='UTF-8';resumed.open('a');
+        resumed.writeln('READY - existing controller shown');
+        resumed.close();return;
+    }
     var log = new File(cfg.job + '/' + stage + '.log');
     log.encoding = 'UTF-8'; log.open('w'); log.close();
     function record(s) { log.open('a'); log.writeln(s); log.close(); }
     function rgb(a) { var c = new RGBColor(); c.red=a[0]; c.green=a[1]; c.blue=a[2]; return c; }
     function sameFile(a,b) { return new File(a).fsName === new File(b).fsName; }
     function openClean(path) {
+        var matches=[];
         for (var i=0;i<app.documents.length;i++) {
             var d=app.documents[i];
             var existing;
-            try { existing=d.fullName; } catch(e) { continue; }
+            try { existing=String(d.fullName); } catch(e) { continue; }
             if (!sameFile(existing,path)) continue;
             if (!d.saved) throw new Error('Unsaved changes in target document');
-            d.close(SaveOptions.DONOTSAVECHANGES); break;
+            matches.push(d);
         }
+        for(i=matches.length-1;i>=0;i--) matches[i].close(SaveOptions.DONOTSAVECHANGES);
         return app.open(new File(path));
     }
     function fresh(path) { if (new File(path).exists) throw new Error('File exists; choose a fresh output/job directory: '+path); }
-    function saveAI(d,path) { var o=new IllustratorSaveOptions(); o.pdfCompatible=true; o.compressed=true; d.saveAs(new File(path),o); }
+    function saveAI(d,path) { var o=new IllustratorSaveOptions(); o.pdfCompatible=true; o.compressed=true; var previous=app.userInteractionLevel; try { app.userInteractionLevel=UserInteractionLevel.DONTDISPLAYALERTS; d.saveAs(new File(path),o); } finally { app.userInteractionLevel=previous; } }
     function png(d,path) { var p=new ExportOptionsPNG24(); p.artBoardClipping=true; p.transparency=false; p.horizontalScale=100; p.verticalScale=100; var previous=app.userInteractionLevel; try { app.userInteractionLevel=UserInteractionLevel.DONTDISPLAYALERTS; d.exportFile(new File(path),ExportType.PNG24,p); } finally { app.userInteractionLevel=previous; } if(!new File(path).exists) throw new Error("PNG export missing: "+path); }
     function within(b,r) { return b[0]>=r[0] && b[2]<=r[2] && cfg.height-b[1]>=r[1] && cfg.height-b[3]<=r[3]; }
     function directItems(parent) {
@@ -124,7 +133,7 @@
             for(i=0;i<actual.length;i++) record('Text: '+actual[i]);
             d.selection=null; app.executeMenuCommand('fitin');
         } else if(stage==='live') {
-            fresh(cfg.output+'/figure-live.ai');
+            fresh(cfg.output+'/figure-live.ai');fresh(cfg.output+'/preview-live.png');
             var source=openClean(finalAI);
             verifyText(source);
             function channels(c) {
@@ -143,12 +152,17 @@
                     if(out.stroked) {out.stroke=channels(node.strokeColor);out.strokeWidth=node.strokeWidth;}
                     out.points=[];
                     for(q=0;q<node.pathPoints.length;q++) {
-                        var p=node.pathPoints[q]; out.points.push([p.anchor,p.leftDirection,p.rightDirection,p.pointType]);
+                        var p=node.pathPoints[q]; out.points.push([p.anchor,p.leftDirection,p.rightDirection,p.pointType===PointType.SMOOTH]);
                     }
                 } else if(node.typename==='TextFrame') {
-                    var a=node.textRange.characterAttributes;
+                    var a=node.characters[0].characterAttributes;
                     out.text=node.contents; out.position=node.position; out.font=a.textFont.name;
                     out.size=a.size; out.horizontal=a.horizontalScale; out.vertical=a.verticalScale; out.fill=channels(a.fillColor);
+                    out.characters=[];
+                    for(q=0;q<node.characters.length;q++) {
+                        a=node.characters[q].characterAttributes;
+                        out.characters.push([a.textFont.name,a.size,a.horizontalScale,a.verticalScale,a.baselineShift,a.tracking,channels(a.fillColor)]);
+                    }
                 } else {throw new Error('Unsupported live object: '+node.typename);}
                 return out;
             }
@@ -160,45 +174,115 @@
                 for(j=0;j<sourceItems.length;j++) layer.children.push(capture(sourceItems[j]));
                 layers.push(layer);
             }
-            var live=app.documents.add(DocumentColorSpace.RGB,cfg.width,cfg.height);
-            live.artboards[0].artboardRect=[0,cfg.height,cfg.width,0];
-            var empty=live.layers[0], count=0;
-            app.executeMenuCommand('fitin'); app.redraw();
-            function playback(children,target) {
+            var token='LooonLive-'+new Date().getTime(), operations=[], names=[], serial=0;
+            function flatten(children,parent) {
                 for(var k=children.length-1;k>=0;k--) {
-                    var child=children[k], made;
-                    if(child.kind==='GroupItem') { made=target.groupItems.add(); playback(child.children,made); }
-                    else if(child.kind==='PathItem') {
-                        made=target.pathItems.add(); var anchors=[];
+                    var child=children[k]; child.parent=parent;
+                    if(child.kind==='GroupItem') {
+                        child.id=token+'-'+(++serial);
+                        operations.push({kind:'GroupItem',id:child.id,parent:parent,opacity:child.opacity});
+                        names.push({kind:'GroupItem',id:child.id,name:child.name});
+                        flatten(child.children,child.id);
+                    } else operations.push(child);
+                }
+            }
+            for(i=layers.length-1;i>=0;i--) {
+                var layer=layers[i], id=token+'-'+(++serial);
+                operations.push({kind:'Layer',id:id});
+                names.push({kind:'Layer',id:id,name:layer.name,locked:layer.locked,visible:layer.visible});
+                flatten(layer.children,id);
+            }
+            var expectedPaths=source.pathItems.length, expectedTexts=source.textFrames.length;
+            var steps=new Folder(cfg.job+'/live-steps-'+token); steps.create();
+            // Each file is a separate Illustrator scripting transaction. Never draw a whole job in one callback.
+            function drawBatch(token,ops,finish,names,expectedPaths,expectedTexts,progress,batchIndex,totalBatches) {
+                token=String(token);var d=null;
+                for(var v=0;v<app.documents.length;v++) {
+                    try {app.documents[v].layers.getByName(token);d=app.documents[v];break;} catch(ignore) {}
+                }
+                if(!d) throw new Error('Live document was closed or its marker layer was changed');
+                d.activate();var madeHere={};
+                function target(id) {
+                    if(madeHere[id]) return madeHere[id];
+                    for(var t=0;t<d.layers.length;t++) if(d.layers[t].name===id) return d.layers[t];
+                    for(t=0;t<d.groupItems.length;t++) if(d.groupItems[t].name===id) return d.groupItems[t];
+                    throw new Error('Live parent missing: '+id);
+                }
+                for(var k=0;k<ops.length;k++) {
+                    var child=ops[k], made;
+                    if(child.kind==='Layer') {made=d.layers.add();made.name=child.id;madeHere[child.id]=made;continue;}
+                    var parent=target(child.parent);
+                    if(child.kind==='GroupItem') {made=parent.groupItems.add();made.name=child.id;made.opacity=child.opacity;madeHere[child.id]=made;continue;}
+                    if(child.kind==='PathItem') {
+                        made=parent.pathItems.add(); var anchors=[];
                         for(var q=0;q<child.points.length;q++) anchors.push(child.points[q][0]);
                         made.setEntirePath(anchors);
                         for(q=0;q<child.points.length;q++) {
-                            var point=made.pathPoints[q];point.leftDirection=child.points[q][1];point.rightDirection=child.points[q][2];point.pointType=child.points[q][3];
+                            var p=made.pathPoints[q];p.leftDirection=child.points[q][1];p.rightDirection=child.points[q][2];
+                            p.pointType=child.points[q][3]?PointType.SMOOTH:PointType.CORNER;
                         }
                         made.closed=child.closed;made.filled=child.filled;made.stroked=child.stroked;made.evenodd=child.evenodd;
                         if(child.filled) made.fillColor=rgb(child.fill);
                         if(child.stroked) {made.strokeColor=rgb(child.stroke);made.strokeWidth=child.strokeWidth;}
-                        count++;
                     } else {
-                        made=target.textFrames.add();made.contents=child.text;
-                        var attr=made.textRange.characterAttributes;
-                        attr.textFont=app.textFonts.getByName(child.font);attr.size=child.size;attr.horizontalScale=child.horizontal;attr.verticalScale=child.vertical;attr.fillColor=rgb(child.fill);
-                        made.position=child.position;count++;
+                        made=parent.textFrames.add();var a=made.textRange.characterAttributes;
+                        a.textFont=app.textFonts.getByName(child.font);a.size=child.size;a.horizontalScale=child.horizontal;a.verticalScale=child.vertical;a.fillColor=rgb(child.fill);
+                        made.contents=child.text;
+                        for(q=0;q<child.characters.length;q++) {
+                            var style=child.characters[q];a=made.characters[q].characterAttributes;
+                            a.textFont=app.textFonts.getByName(style[0]);a.size=style[1];a.horizontalScale=style[2];a.verticalScale=style[3];a.baselineShift=style[4];a.tracking=style[5];a.fillColor=rgb(style[6]);
+                        }
+                        made.position=child.position;
                     }
                     made.name=child.name;made.opacity=child.opacity;
-                    if(count%8===0) {live.activate(); app.redraw(); $.sleep(40);}
                 }
+                d.selection=null;app.redraw();
+                record('PROGRESS '+progress+'; paths='+d.pathItems.length+'; text='+d.textFrames.length+'; time='+new Date().getTime());
+                if(finish) {
+                    for(k=0;k<names.length;k++) {
+                        var info=names[k], item=target(info.id);item.name=info.name;
+                        if(info.kind==='Layer') {item.visible=info.visible;item.locked=info.locked;}
+                    }
+                    d.layers.getByName(token).remove();
+                    verifyText(d);
+                    if(d.pathItems.length!==expectedPaths || d.textFrames.length!==expectedTexts || d.rasterItems.length || d.placedItems.length) throw new Error('Live object count mismatch');
+                    saveAI(d,cfg.output+'/figure-live.ai');png(d,cfg.output+'/preview-live.png');saveAI(d,cfg.output+'/figure-live.ai');
+                    record('Verified text='+d.textFrames.length+'; paths='+d.pathItems.length+'; raster=0; placed=0');record('DONE');
+                }
+                var cursor=new File(cfg.job+'/live-cursor.txt');cursor.open('w');cursor.write(batchIndex+1);cursor.close();
+                var view=$.global.looonLivePanel && $.global.looonLivePanel.job===cfg.job ? $.global.looonLivePanel.window : null;
+                if(view) {view.children[0].text=(finish?'Done':'Completed')+' - batch '+(batchIndex+1)+' / '+totalBatches;view.children[1].value=batchIndex+1;if(finish)for(var b=0;b<view.children[2].children.length;b++)view.children[2].children[b].enabled=false;view.update();}
+                return progress;
             }
-            for(i=layers.length-1;i>=0;i--) {
-                var sl=layers[i], dl=live.layers.add(); dl.name=sl.name;
-                playback(sl.children,dl); dl.visible=sl.visible; dl.locked=sl.locked;
-                live.activate(); app.redraw(); $.sleep(120);
+            var worker='var cfg='+cfg.toSource()+';\nvar log=new File(cfg.job+"/live.log");log.encoding="UTF-8";\n'+
+                'var record='+record.toSource()+';var rgb='+rgb.toSource()+';var saveAI='+saveAI.toSource()+';var png='+png.toSource()+';var verifyText='+verifyText.toSource()+';\n';
+            var files=[], batchSize=8;
+            function asciiScript(code) {return code.replace(/[^\x00-\x7F]/g,function(c){return '\\u'+('0000'+c.charCodeAt(0).toString(16)).slice(-4);});}
+            for(i=0;i<operations.length;i+=batchSize) {
+                var end=Math.min(i+batchSize,operations.length), last=end===operations.length;
+                var stepFile=new File(steps.fsName+'/'+files.length+'.jsx');stepFile.encoding='UTF-8';stepFile.open('w');
+                stepFile.write(asciiScript(worker+'('+drawBatch.toSource()+')('+token.toSource()+','+operations.slice(i,end).toSource()+','+last+','+(last?names.toSource():'[]')+','+expectedPaths+','+expectedTexts+','+end+','+files.length+','+Math.ceil(operations.length/batchSize)+');'));stepFile.close();
+                files.push(encodeURI(stepFile.fsName));
             }
-            empty.remove(); live.selection=null; app.redraw();
-            verifyText(live);
-            if(live.pathItems.length!==source.pathItems.length || live.textFrames.length!==source.textFrames.length) throw new Error('Live playback object count mismatch');
-            saveAI(live,cfg.output+'/figure-live.ai'); png(live,cfg.output+'/preview-live.png'); saveAI(live,cfg.output+'/figure-live.ai');
-            record('Created native objects progressively: '+count);
+            var live=app.documents.add(DocumentColorSpace.RGB,cfg.width,cfg.height);
+            live.artboards[0].artboardRect=[0,cfg.height,cfg.width,0];live.layers[0].name=token;
+            app.executeMenuCommand('fitin');app.redraw();
+            function writeControl(name,value) {var f=new File(cfg.job+'/'+name);f.encoding='UTF-8';f.open('w');f.write(value);f.close();}
+            writeControl('live-plan.txt',files.join('\n'));
+            writeControl('live-cursor.txt','0');writeControl('live-command.txt','pause');
+            var state={job:cfg.job,closed:false};
+            var old=$.global.looonLivePanel;if(old && !old.closed) old.window.close();
+            var panel=new Window('palette','Illustrator Live Drawing');panel.orientation='column';
+            var status=panel.add('statictext',undefined,'Ready - blank canvas; start the OS runner');status.preferredSize=[400,25];
+            var bar=panel.add('progressbar',undefined,0,files.length);bar.preferredSize=[400,12];
+            var row=panel.add('group'), start=row.add('button',undefined,'Start / Resume'), pause=row.add('button',undefined,'Pause'), step=row.add('button',undefined,'Step');
+            start.onClick=function(){writeControl('live-command.txt','play');status.text='Playing - see canvas';record('PLAY');};
+            pause.onClick=function(){writeControl('live-command.txt','pause');status.text='Paused after the current batch';record('PAUSE');};
+            step.onClick=function(){writeControl('live-command.txt','step');status.text='Step requested';record('STEP');};
+            panel.onClose=function(){writeControl('live-command.txt','stop');state.closed=true;record('CLOSED');};
+            state.window=panel;$.global.looonLivePanel=state;panel.show();panel.active=true;
+            record('READY - blank canvas; '+files.length+' batches; OS runner required');
+            return;
         }
         record('DONE');
     } catch(e) {record('ERROR: '+e+'; line='+e.line);}
