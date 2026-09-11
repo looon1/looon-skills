@@ -1,13 +1,21 @@
 ---
 name: illustrator-flowchart-drawing
-description: 将参考图片中的流程图、信息图和插画重建为 Adobe Illustrator 可编辑文件，支持 macOS 原生脚本、Windows 启动入口与画布实时绘制。适用于还原原图、恢复可编辑文字并交付经 Illustrator 验证的 AI、SVG 和 PNG 的任务。
+description: 将参考图中的科研机制图、流程图和插画重建到 Adobe Illustrator 或 PowerPoint，支持原生可编辑文字、几何与实时逐对象绘制。按目标应用交付经现场核验的 AI/SVG/PNG 或 PPTX；PowerPoint 可选择明确声明图片范围的混合编辑模式。
 ---
 
-# Illustrator 参考图重建
+# Illustrator / PowerPoint 参考图重建
 
 以参考图为视觉依据，保留文字内容、相对位置、配色和插画轮廓。默认目标是外观接近且便于编辑；若用户要求像素级一致，说明描摹与字体重建会产生细微差异。不要把一张嵌入位图称为可编辑矢量重建，也不要补写图片没有提供的科学内容。
 
 先拆分对象类型：文字用原生 TextFrame；矩形框、圆形、直线、曲线、箭头、虚线和简单背景用少量锚点的原生几何与描边。矩形框应是四个锚点的闭合描边，虚线应使用 `strokeDashes`，箭头应是可编辑描边曲线与箭头头部的分组。不能把这些对象的描摹色块保留下来再逐块播放。只有细胞、动物、组织等复杂插画使用描摹重建和分批呈现。
+
+## 按用户指定的应用分流
+
+- **PowerPoint / PPT / PPTX / 在幻灯片里实时绘制**：先读 [PowerPoint 实时绘制](references/powerpoint-live.md)，执行其中的 macOS 原生缓存播放或 Windows COM 路线。已有原生几何或简单图形时不要求 Illustrator；复杂插画逐路径模式可复用本机 Illustrator 描摹准备几何，最终仍在 PowerPoint 创建与编辑。文字、原生曲线和图片分别计数；复杂对象也要求实时绘制时使用原生自由曲线路线，不能改用贴图。混合模式不可声称全部矢量。
+- **Illustrator / AI**：执行下方既有 Illustrator 流程。
+- 用户已经指定应用时，不要改成另一个应用展示。用户未指定时，根据其明确要求的文件格式选择。
+
+以下执行顺序、原生 `TextFrame`、零位图验收及 AI/SVG 导出要求适用于 **Illustrator 分支**；PowerPoint 分支使用自己的对象模型、模式声明和完成门槛。
 
 ## 先确认可执行环境
 

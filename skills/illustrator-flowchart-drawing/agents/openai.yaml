@@ -1,4 +1,4 @@
 interface:
-  display_name: "Illustrator 参考图重建"
-  short_description: "还原参考图的布局和插画，重建可编辑文字，并在 Illustrator 中验证成品"
-  default_prompt: "使用 $illustrator-flowchart-drawing 将这张参考图重建为可编辑的 Illustrator 文件，并核对成品。"
+  display_name: "Illustrator / PowerPoint 科研图"
+  short_description: "在 Illustrator 或 PowerPoint 中实时重建科研图，并核对原生对象与编辑范围"
+  default_prompt: "使用 $illustrator-flowchart-drawing 按我指定的 Illustrator 或 PowerPoint 重建这张参考图，实时绘制原生对象并核对成品；如有图片元素，明确说明编辑范围。"
