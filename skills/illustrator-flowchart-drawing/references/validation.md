@@ -8,7 +8,7 @@
 | --- | --- |
 | 环境 | macOS，Adobe Illustrator 2025 29.5.1，Python 3.13，TeX Live 2026，dvisvgm 3.6 |
 | 安装 | `setup.py --formulas` 在独立 `.venv` 安装锁定依赖，doctor 全项通过 |
-| Python | 准备脚本 13 项、回归 14 项、原有 PowerPoint 12 项，共 39 项通过；回归包含真正的 TeX 编译与缺字拒绝 |
+| Python | 准备脚本 13 项、回归 15 项、原有 PowerPoint 12 项，共 40 项通过；回归包含真正的 TeX 编译与缺字拒绝 |
 | Skill 元数据 | skill-creator `quick_validate.py` 通过 |
 | 普通文字 | 4 个真实 TextFrame，含多行、30° 旋转、希腊字母；字号、字体、基线和 100%/100% 等比属性回读通过 |
 | 中英混排补测 | `STSongti-SC-Bold` 中文、`Arial-BoldMT` 英文/希腊字母，真实字体文件字重均 700；compose/live/verify 通过，PNG 字形可见 |

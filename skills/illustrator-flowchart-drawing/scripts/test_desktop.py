@@ -41,47 +41,47 @@ def run_test(root):
 
     stage('compose')
     addition=root/'add-art.jsx'
-    addition.write_text((scripts.parent/'tests/add-complex-fixture.jsx').read_text().replace('__TARGET__',json.dumps((output/'figure.ai').as_posix())),encoding='ascii')
+    addition.write_text((scripts.parent/'tests/add-complex-fixture.jsx').read_text(encoding='utf-8').replace('__TARGET__',json.dumps((output/'figure.ai').as_posix())),encoding='ascii')
     execute(addition);stage('export')
     baseline=root/'source.png';baseline.write_bytes((output/'preview.png').read_bytes())
     stage('live','--start','--max-batches','1')
-    assert (job/'live-cursor.txt').read_text().strip()=='1'
+    assert (job/'live-cursor.txt').read_text(encoding='utf-8').strip()=='1'
     # The first static transaction must contain no complex illustration group.
-    batches=job/'live-batches';ops=json.loads((batches/'0.json').read_text())
+    batches=job/'live-batches';ops=json.loads((batches/'0.json').read_text(encoding='utf-8'))
     assert not any(o.get('name')=='Complex fixture' for o in ops)
     assert sum(o.get('kind')=='TextFrame' for o in ops)==4
     execute(batches/'1.jsx')
-    cursor=(job/'live-cursor.txt').read_text()
+    cursor=(job/'live-cursor.txt').read_text(encoding='utf-8')
     (job/'interrupt-after-object.txt').write_text('one-shot test fault')
     failed=execute(batches/'2.jsx',check=False)
     assert failed.returncode!=0 and 'TEST_INTERRUPTION_AFTER_OBJECT' in failed.stderr+failed.stdout
-    assert (job/'live-cursor.txt').read_text()==cursor
+    assert (job/'live-cursor.txt').read_text(encoding='utf-8')==cursor
     stage('live','--start','--max-batches','1')
-    assert (job/'live-cursor.txt').read_text().strip()=='3'
+    assert (job/'live-cursor.txt').read_text(encoding='utf-8').strip()=='3'
     # Leave the runner active and issue a real Step command, then verify a stable pause.
     progress=root/'step-runner.log'
     with progress.open('w') as stream:
         runner=subprocess.Popen(command('live'),stdout=stream,stderr=subprocess.STDOUT)
         try:
             deadline=time.monotonic()+30
-            while 'Ready.' not in progress.read_text() and 'Ready.' not in (job/'live.log').read_text():
-                if runner.poll() is not None or time.monotonic()>deadline:raise RuntimeError('Live controller not ready: '+progress.read_text())
+            while 'Ready.' not in progress.read_text(encoding='utf-8') and 'Ready.' not in (job/'live.log').read_text(encoding='utf-8'):
+                if runner.poll() is not None or time.monotonic()>deadline:raise RuntimeError('Live controller not ready: '+progress.read_text(encoding='utf-8'))
                 time.sleep(.1)
             (job/'live-command.txt').write_text('step')
             deadline=time.monotonic()+30
-            while (job/'live-cursor.txt').read_text().strip()!='4':
-                if runner.poll() is not None or time.monotonic()>deadline:raise RuntimeError('Step failed: '+progress.read_text())
+            while (job/'live-cursor.txt').read_text(encoding='utf-8').strip()!='4':
+                if runner.poll() is not None or time.monotonic()>deadline:raise RuntimeError('Step failed: '+progress.read_text(encoding='utf-8'))
                 time.sleep(.1)
             time.sleep(1)
-            assert (job/'live-cursor.txt').read_text().strip()=='4'
-            assert (job/'live-command.txt').read_text().strip()=='pause'
+            assert (job/'live-cursor.txt').read_text(encoding='utf-8').strip()=='4'
+            assert (job/'live-command.txt').read_text(encoding='utf-8').strip()=='pause'
             (job/'live-command.txt').write_text('stop')
             runner.wait(timeout=10)
-            assert runner.returncode==0,progress.read_text()
+            assert runner.returncode==0,progress.read_text(encoding='utf-8')
         finally:
             if runner.poll() is None:runner.terminate()
-    assert (job/'live-cursor.txt').read_text().strip()=='4'
-    session=json.loads((job/'live-session.json').read_text())
+    assert (job/'live-cursor.txt').read_text(encoding='utf-8').strip()=='4'
+    session=json.loads((job/'live-session.json').read_text(encoding='utf-8'))
     closing=root/'close-owned-checkpoint.jsx'
     closing.write_text('var d=app.activeDocument;d.layers.getByName('+json.dumps(session['token'])+');if(d.fullName.fsName!==new File('+json.dumps((job/'live-checkpoint.ai').as_posix())+').fsName)throw new Error("Not the owned checkpoint");d.close(SaveOptions.DONOTSAVECHANGES);',encoding='ascii')
     execute(closing)
@@ -118,7 +118,7 @@ def run_test(root):
     case=root/'legacy';case.mkdir();job=case/'job';output=case/'output'
     source=case/'reference.png';Image.new('RGB',(400,220),'white').save(source)
     original=case/'legacy.ai';fixture=case/'fixture.jsx'
-    fixture.write_text((scripts.parent/'tests/legacy-fixture.jsx').read_text().replace('__TARGET__',json.dumps(original.as_posix())),encoding='ascii');execute(fixture)
+    fixture.write_text((scripts.parent/'tests/legacy-fixture.jsx').read_text(encoding='utf-8').replace('__TARGET__',json.dumps(original.as_posix())),encoding='ascii');execute(fixture)
     before=original.read_bytes()
     data={'labels':[{'id':'new-label','text':'Legacy label','font':'Arial-BoldMT','font_size':18,'baseline':[25,40],'bounds':[20,20,200,60],'repair':'none'}],
           'groups':[{'name':'Retained','bounds':[10,10,350,210]}],

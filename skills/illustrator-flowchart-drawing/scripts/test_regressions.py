@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 from PIL import Image
 from prepare_job import prepare, bounds, native_layout
 from typeset_formulas import outline_geometry, typeset
@@ -18,7 +19,7 @@ class RegressionTests(unittest.TestCase):
     def prepare(self,data):
         manifest=self.root/'manifest.json';manifest.write_text(json.dumps(data))
         prepare(self.source,self.job,self.output,manifest,check_fonts=False)
-        return json.loads((self.job/'job.json').read_text())
+        return json.loads((self.job/'job.json').read_text(encoding='utf-8'))
 
     def test_multiline_baseline_rotation_and_font_size_survive(self):
         label=dict(id='label-a',text='First\nSecond α',font='Verified-Bold',font_size=18,baseline=[20,45],rotation=30,align='center',leading=24,bounds=[5,10,195,100],repair='none')
@@ -26,10 +27,19 @@ class RegressionTests(unittest.TestCase):
         for key in ('text','font_size','baseline','rotation','align','leading'):self.assertEqual(label[key],result[key])
         self.assertTrue((self.job/'compose.jsx').read_bytes().isascii())
 
+    def test_explicit_utf8_survives_windows_legacy_locale(self):
+        original=Path.read_text
+        def legacy_read(path,*args,**kwargs):
+            if not args:kwargs.setdefault('encoding','cp1252')
+            return original(path,*args,**kwargs)
+        with patch.object(Path,'read_text',legacy_read):
+            result=self.prepare({'labels':[dict(text='中文 ≥ α',font='Verified-Bold',bounds=[5,5,190,100],repair='none')]})
+        self.assertEqual(result['labels'][0]['text'],'中文 ≥ α')
+
     def test_no_text_does_not_require_placeholder(self):
         result=self.prepare({'labels':[],'nativeLayout':{'elements':[]}})
         self.assertEqual(result['labels'],[])
-        self.assertEqual(json.loads((self.output/'formulas.json').read_text()),[])
+        self.assertEqual(json.loads((self.output/'formulas.json').read_text(encoding='utf-8')),[])
 
     def test_no_repair_allows_overlapping_label_regions(self):
         label=dict(text='First',font='Verified-Bold',bounds=[1,1,180,100],padding=0,repair='none')

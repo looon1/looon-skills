@@ -88,9 +88,9 @@ def prepare(source, job, output, manifest=None, editable_source=None, check_font
         pixels = Image.frombytes('RGB', original.size, original.tobytes())
     data = json.loads(manifest.read_text(encoding='utf-8')) if manifest else {}
     scripts=Path(__file__).parent
-    native=(scripts/'native.jsx').read_text(encoding='utf-8').replace('__OBJECTS__',(scripts/'objects.jsx').read_text()).replace('__LIVE__',(scripts/'live_runtime.jsx').read_text())
+    native=(scripts/'native.jsx').read_text(encoding='utf-8').replace('__OBJECTS__',(scripts/'objects.jsx').read_text(encoding='utf-8')).replace('__LIVE__',(scripts/'live_runtime.jsx').read_text(encoding='utf-8'))
     input_hash=hashlib.sha256((json.dumps(data,sort_keys=True)+native).encode()+pixels.tobytes()+(editable_source.read_bytes() if editable_source else b'')).hexdigest()
-    if (job/'live-session.json').exists() and json.loads((job/'job.json').read_text()).get('input_sha256')!=input_hash:
+    if (job/'live-session.json').exists() and json.loads((job/'job.json').read_text(encoding='utf-8')).get('input_sha256')!=input_hash:
         raise ValueError('Active live job changed; use a fresh job directory')
     job.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -188,10 +188,10 @@ def prepare(source, job, output, manifest=None, editable_source=None, check_font
     if type(config['playback']['batch_size']) is not int or not 1<=config['playback']['batch_size']<=50:raise ValueError('Batch size must be 1..50')
     if type(config['playback']['delay_ms']) is not int or not 0<=config['playback']['delay_ms']<=5000:raise ValueError('Delay must be 0..5000 ms')
     scripts=Path(__file__).parent
-    native=(scripts/'native.jsx').read_text(encoding='utf-8').replace('__OBJECTS__',(scripts/'objects.jsx').read_text()).replace('__LIVE__',(scripts/'live_runtime.jsx').read_text())
+    native=(scripts/'native.jsx').read_text(encoding='utf-8').replace('__OBJECTS__',(scripts/'objects.jsx').read_text(encoding='utf-8')).replace('__LIVE__',(scripts/'live_runtime.jsx').read_text(encoding='utf-8'))
     fingerprint=hashlib.sha256((json.dumps(config,sort_keys=True)+native).encode()+pixels.tobytes()+(editable_source.read_bytes() if editable_source else b'')).hexdigest()
     if (job/'live-session.json').exists():
-        old=json.loads((job/'live-session.json').read_text())
+        old=json.loads((job/'live-session.json').read_text(encoding='utf-8'))
         if old['fingerprint']!=fingerprint:raise ValueError('Active live job changed; use a fresh job directory')
     config['fingerprint']=fingerprint
     shutil.copy2(job/'typeset/formulas.json',output/'formulas.json')

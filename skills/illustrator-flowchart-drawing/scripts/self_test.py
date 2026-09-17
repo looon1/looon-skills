@@ -37,7 +37,7 @@ class PreparationTests(unittest.TestCase):
             self.assertEqual(source.tobytes(),tiff.tobytes())
         Image.open(self.source).save(self.job/'trace-preview.png')
         self.run_prepare({'labels':[self.label()], 'groups':[]})
-        data=json.loads((self.job/'job.json').read_text())
+        data=json.loads((self.job/'job.json').read_text(encoding='utf-8'))
         self.assertEqual(data['labels'][0]['text'],'Result ≥ 20')
         self.assertEqual(data['labels'][0]['background'],[242,238,231])
         generated=(self.job/'rebuild.jsx').read_text(encoding='ascii')
@@ -49,7 +49,7 @@ class PreparationTests(unittest.TestCase):
         preview.paste((20,20,20),(10,10,80,30))
         preview.save(self.job/'trace-preview.png')
         self.run_prepare({'labels':[self.label()]})
-        result=json.loads((self.job/'job.json').read_text())
+        result=json.loads((self.job/'job.json').read_text(encoding='utf-8'))
         self.assertEqual(result['labels'][0]['background'],[242,238,231])
 
     def test_dense_labels_inside_illustration(self):
@@ -58,7 +58,7 @@ class PreparationTests(unittest.TestCase):
         first = dict(self.label('H'), bounds=[20, 20, 30, 30], padding=0.5)
         second = dict(self.label('N'), bounds=[20, 32, 30, 42], padding=0.5, repair='glyphs')
         self.run_prepare({'labels':[first, second], 'groups':[{'name':'Molecule', 'bounds':[5,5,90,70]}]})
-        result=json.loads((self.job/'job.json').read_text())
+        result=json.loads((self.job/'job.json').read_text(encoding='utf-8'))
         self.assertEqual([x['text'] for x in result['labels']], ['H','N'])
         self.assertEqual(result['labels'][1]['repair'],'glyphs')
 
@@ -99,7 +99,7 @@ class PreparationTests(unittest.TestCase):
         layout={'elements':[{'name':'Frame','type':'rect','bounds':[5,5,95,75],'stroke':[190,50,40],'width':3},
                             {'name':'Dashed connector','type':'path','points':[[[10,40]],[[90,60]]],'stroke':[40,40,40],'dashes':[5,4]}]}
         self.run_prepare({'labels':[self.label()], 'nativeLayout':layout})
-        config=json.loads((self.job/'job.json').read_text())
+        config=json.loads((self.job/'job.json').read_text(encoding='utf-8'))
         self.assertEqual(config['nativeLayout']['elements'],layout['elements'])
         self.assertTrue((self.job/'structure.jsx').read_bytes().isascii())
 
@@ -124,7 +124,7 @@ class PreparationTests(unittest.TestCase):
         labels=[dict(self.label(text),background=[255,255,255]) for text in ['O','2']]
         manifest.write_text(json.dumps({'labels':labels}))
         module.prepare(self.source,self.job,self.output,manifest,editable_source=native,check_fonts=False)
-        result=json.loads((self.job/'job.json').read_text())
+        result=json.loads((self.job/'job.json').read_text(encoding='utf-8'))
         self.assertEqual([x['text'] for x in result['labels']],['O','2'])
 
 
