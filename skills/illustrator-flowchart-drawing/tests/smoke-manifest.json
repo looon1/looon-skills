@@ -206,6 +206,34 @@
           14,
           10
         ]
+      },
+      {
+        "name": "Diagonal arrow preserves endpoint order",
+        "type": "path",
+        "points": [
+          [
+            [
+              650,
+              175
+            ]
+          ],
+          [
+            [
+              758,
+              207
+            ]
+          ]
+        ],
+        "stroke": [
+          40,
+          35,
+          35
+        ],
+        "width": 3.2,
+        "arrow": [
+          17,
+          14
+        ]
       }
     ]
   },
