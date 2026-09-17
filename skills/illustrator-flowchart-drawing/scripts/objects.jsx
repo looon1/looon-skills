@@ -56,7 +56,8 @@ function makeObject(parent,child,d) {
             for(i=0;i<child.points.length;i++)anchors.push(child.points[i][0]);made.setEntirePath(anchors);
             for(i=0;i<child.points.length;i++){var p=made.pathPoints[i],v=child.points[i];p.leftDirection=v[1];p.rightDirection=v[2];p.pointType=v[3]?PointType.SMOOTH:PointType.CORNER;}
             made.closed=child.closed;made.filled=child.filled;made.stroked=child.stroked;made.evenodd=!!child.evenodd;
-            if(child.polarity!==undefined)made.polarity=child.polarity?PolarityValues.POSITIVE:PolarityValues.NEGATIVE;
+            // Winding applies to filled contours; assigning it to an open path can reverse its anchors.
+            if(child.closed&&child.polarity!==undefined)made.polarity=child.polarity?PolarityValues.POSITIVE:PolarityValues.NEGATIVE;
             if(child.filled){made.fillColor=nativePaint(d,child.fill);if(!(child.fill instanceof Array))made.rotate(child.fill.angle||0,false,false,true,false,Transformation.CENTER);}
             if(child.stroked){made.strokeColor=rgb(child.stroke);made.strokeWidth=child.strokeWidth;made.strokeDashes=child.dashes||[];made.strokeDashOffset=child.dashOffset||0;made.strokeCap=child.cap==='round'?StrokeCap.ROUNDENDCAP:(child.cap==='square'?StrokeCap.PROJECTINGENDCAP:StrokeCap.BUTTENDCAP);made.strokeJoin=child.join==='round'?StrokeJoin.ROUNDENDJOIN:(child.join==='bevel'?StrokeJoin.BEVELENDJOIN:StrokeJoin.MITERENDJOIN);made.strokeMiterLimit=child.miter||4;}
             if(child.clipping)made.clipping=true;

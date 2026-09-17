@@ -20,6 +20,7 @@ function drawLiveBatch(index) {
         if(fault.exists){fault.remove();throw new Error('TEST_INTERRUPTION_AFTER_OBJECT');}
     }
     d.selection=null;app.redraw();
+    if(index===0){verifyText(d);verifyNative(d);verifyFormulas(d);}
     record('PROGRESS batch='+index+'; paths='+d.pathItems.length+'; text='+d.textFrames.length+'; time='+new Date().getTime());
     if(index===0||new Date().getTime()-session.savedAt>=60000){saveAI(d,cfg.job+'/live-checkpoint.ai');session.savedAt=new Date().getTime();}
     if(index===session.batches-1) {
