@@ -37,6 +37,8 @@ macOS Illustrator 可通过“文件 → 脚本 → 其它脚本”选择 JSX；
 
 同日对插画内标签继续检查并补齐后，最终实例含 40 个原生 TextFrame、12 个插画组、1,197 条路径、零位图；实时创建 1,237 个叶对象，重建稿与实时稿 PNG 仍像素一致。下标使用普通数字文本框按下标位置排版，避免当前字体缺少 Unicode 下标字形。文字背景自动取色排除深色墨迹，修复了紧密小字错误选中黑色的情况。
 
+上述下标拆分方式仅为旧测试记录。按 2026-09-17 整合的要求，数学/化学脚标必须使用正规结构化排版，不再沿用数字文本框拼接。公式允许正规排版后转矢量轮廓并保留源码，普通文字仍为真实粗体的原生文本框。执行与验收见 [公式排版与高保真验收](formulas-fidelity.md)；历史测试结果不证明新的公式流程已实机通过。
+
 通用脚本采用上述已验证机制，增加输入、文件存在性和文档状态检查。每次使用仍须在实际 Illustrator 中运行并验收。
 
 Adobe 官方说明：[编辑描摹结果](https://helpx.adobe.com/illustrator/desktop/manage-objects/traces-mockups-symbols/edit-image-trace-results.html)、[图像描摹面板选项](https://helpx.adobe.com/uk/illustrator/desktop/manage-objects/traces-mockups-symbols/image-trace-panel-options.html)。脚本接口细节优先检查实际安装版本的脚本字典和对象反射。

@@ -1,4 +1,4 @@
 interface:
   display_name: "Illustrator / PowerPoint 科研图"
-  short_description: "在 Illustrator 或 PowerPoint 中实时重建科研图，并核对原生对象与编辑范围"
-  default_prompt: "使用 $illustrator-flowchart-drawing 按我指定的 Illustrator 或 PowerPoint 重建这张参考图，实时绘制原生对象并核对成品；如有图片元素，明确说明编辑范围。"
+  short_description: "在 Illustrator 或 PowerPoint 重建科研图，核对原生对象、数学公式与编辑范围"
+  default_prompt: "使用 $illustrator-flowchart-drawing 按我指定的应用重建参考图；Illustrator 保持原图布局、采用正规公式排版和真实粗体，交付 AI、PNG、Master SVG 与公式源码清单，仅复杂插画逐步绘制；PowerPoint 按其专用流程核对原生对象和图片编辑范围。"
