@@ -137,7 +137,8 @@ def run_test(root):
     drawing.ellipse((197,60,238,100),fill=(158,94,169))
     font=inspect_fonts([{'text':'A','font':'Arial-BoldMT'}])[0]['file']
     drawing.text((40,50),'A',font=ImageFont.truetype(font,32),fill=(20,20,20));image.save(source)
-    data={'labels':[{'id':'label-A','text':'A','font':'Arial-BoldMT','font_size':32,'baseline':[40,80],'bounds':[35,45,80,100],'repair':'glyphs','background':[255,255,255]}],
+    # Omit size/baseline to exercise outline measurement and fresh text attributes.
+    data={'labels':[{'id':'label-A','text':'A','font':'Arial-BoldMT','bounds':[35,45,80,100],'repair':'glyphs','background':[255,255,255]}],
           'groups':[{'name':'Cell','bounds':[165,30,276,141]}],
           'nativeLayout':{'elements':[{'name':'Background','type':'rect','bounds':[0,0,320,180],'fill':[255,255,255],'background':True},{'name':'Frame','type':'rect','bounds':[10,10,310,170],'stroke':[180,55,45],'width':3}]}}
     manifest=case/'manifest.json';manifest.write_text(json.dumps(data));prepare(source,job,output,manifest)

@@ -42,6 +42,8 @@
         tf.textRange.paragraphAttributes.justification=item.align==='center'?Justification.CENTER:(item.align==='right'?Justification.RIGHT:Justification.LEFT);
         if(!item.font_size) {
             var m=tf.duplicate().createOutline(),b=m.geometricBounds,r=item.bounds,scale=Math.min((r[2]-r[0])/(b[2]-b[0]),(r[3]-r[1])/(b[1]-b[3]));m.remove();
+            // Outlining/removing the measuring copy invalidates cached text attributes.
+            a=tf.textRange.characterAttributes;
             a.size=40*scale;a.leading=item.leading||a.size*1.2;
         }
         if(item.rotation)tf.rotate(-item.rotation);
