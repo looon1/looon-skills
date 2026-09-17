@@ -26,7 +26,7 @@ class PreparationTests(unittest.TestCase):
         if data is not None:
             manifest=self.base/'labels.json'
             manifest.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
-        module.prepare(self.source, self.job, self.output, manifest)
+        module.prepare(self.source, self.job, self.output, manifest,check_fonts=False)
 
     def label(self, text='Result ≥ 20'):
         return {'text':text,'font':'ArialMT','bounds':[10,10,80,30]}
@@ -112,18 +112,18 @@ class PreparationTests(unittest.TestCase):
 
     def test_editable_source_cannot_be_silently_replaced(self):
         native=self.base/'input.ai';native.write_bytes(b'first native fixture')
-        module.prepare(self.source,self.job,self.output,editable_source=native)
+        module.prepare(self.source,self.job,self.output,editable_source=native,check_fonts=False)
         self.assertEqual((self.job/'source.ai').read_bytes(),native.read_bytes())
         native.write_bytes(b'different native fixture')
         with self.assertRaisesRegex(ValueError,'Editable source changed'):
-            module.prepare(self.source,self.job,self.output,editable_source=native)
+            module.prepare(self.source,self.job,self.output,editable_source=native,check_fonts=False)
 
     def test_editable_source_does_not_repair_existing_text(self):
         native=self.base/'input.ai';native.write_bytes(b'editable native fixture')
         manifest=self.base/'labels.json'
         labels=[dict(self.label(text),background=[255,255,255]) for text in ['O','2']]
         manifest.write_text(json.dumps({'labels':labels}))
-        module.prepare(self.source,self.job,self.output,manifest,editable_source=native)
+        module.prepare(self.source,self.job,self.output,manifest,editable_source=native,check_fonts=False)
         result=json.loads((self.job/'job.json').read_text())
         self.assertEqual([x['text'] for x in result['labels']],['O','2'])
 

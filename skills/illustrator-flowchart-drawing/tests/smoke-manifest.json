@@ -1,0 +1,223 @@
+{
+  "labels": [
+    {
+      "id": "title",
+      "text": "Editable text and structured mathematics",
+      "font": "Arial-BoldMT",
+      "font_size": 26,
+      "baseline": [
+        32,
+        50
+      ],
+      "bounds": [
+        32,
+        22,
+        860,
+        60
+      ],
+      "repair": "none"
+    },
+    {
+      "id": "multiline",
+      "text": "Native text\nSecond line",
+      "font": "Arial-BoldMT",
+      "font_size": 20,
+      "leading": 28,
+      "baseline": [
+        40,
+        120
+      ],
+      "bounds": [
+        40,
+        90,
+        270,
+        170
+      ],
+      "repair": "none"
+    },
+    {
+      "id": "greek",
+      "text": "Greek α β ≥ 20",
+      "font": "Arial-BoldMT",
+      "font_size": 19,
+      "baseline": [
+        320,
+        115
+      ],
+      "bounds": [
+        300,
+        85,
+        620,
+        125
+      ],
+      "repair": "none"
+    },
+    {
+      "id": "rotated",
+      "text": "Rotated 30 degrees",
+      "font": "Arial-BoldMT",
+      "font_size": 18,
+      "rotation": 30,
+      "baseline": [
+        650,
+        85
+      ],
+      "bounds": [
+        620,
+        60,
+        875,
+        180
+      ],
+      "repair": "none"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "F001",
+      "tex": "\\frac{x_i^2+\\alpha}{\\beta}",
+      "bounds": [
+        40,
+        220,
+        400,
+        310
+      ],
+      "font_size": 28
+    },
+    {
+      "id": "F002",
+      "tex": "\\sum_{i=1}^{n}\\hat{x}_i-\\mu",
+      "bounds": [
+        450,
+        200,
+        830,
+        310
+      ],
+      "font_size": 28
+    },
+    {
+      "id": "F003",
+      "tex": "\\mathrm{H}_2\\mathrm{O}_2\\rightarrow\\mathrm{H}_2\\mathrm{O}+\\tfrac{1}{2}\\mathrm{O}_2",
+      "bounds": [
+        40,
+        330,
+        810,
+        390
+      ],
+      "font_size": 24
+    },
+    {
+      "id": "F004",
+      "tex": "\\int_0^\\infty e^{-x^2}\\,\\mathrm{d}x=\\frac{\\sqrt{\\pi}}{2}",
+      "bounds": [
+        40,
+        430,
+        520,
+        510
+      ],
+      "font_size": 24
+    }
+  ],
+  "nativeLayout": {
+    "elements": [
+      {
+        "name": "Background",
+        "type": "rect",
+        "bounds": [
+          0,
+          0,
+          900,
+          620
+        ],
+        "fill": [
+          255,
+          255,
+          255
+        ],
+        "background": true
+      },
+      {
+        "name": "Red frame",
+        "type": "rect",
+        "bounds": [
+          15,
+          12,
+          885,
+          605
+        ],
+        "stroke": [
+          184,
+          52,
+          58
+        ],
+        "width": 3
+      },
+      {
+        "name": "Dashed line",
+        "type": "path",
+        "points": [
+          [
+            [
+              25,
+              183
+            ]
+          ],
+          [
+            [
+              875,
+              183
+            ]
+          ]
+        ],
+        "stroke": [
+          75,
+          95,
+          122
+        ],
+        "width": 2,
+        "dashes": [
+          7,
+          5
+        ]
+      },
+      {
+        "name": "Arrow",
+        "type": "path",
+        "points": [
+          [
+            [
+              520,
+              560
+            ]
+          ],
+          [
+            [
+              790,
+              560
+            ]
+          ]
+        ],
+        "stroke": [
+          75,
+          95,
+          122
+        ],
+        "width": 3,
+        "arrow": [
+          14,
+          10
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "Complex fixture",
+      "bounds": [
+        530,
+        425,
+        860,
+        570
+      ]
+    }
+  ]
+}

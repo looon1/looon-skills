@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Run Illustrator JSX through its native AppleScript interface, yielding between live batches."""
 import argparse
+import json
+import fcntl
 from pathlib import Path
 import subprocess
 import sys
@@ -25,9 +27,11 @@ def execute(script, activate=False):
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
-def run(job, stage):
+def run(job, stage, start=False, max_batches=0):
     if sys.platform != 'darwin':
         raise RuntimeError('This launcher requires macOS with desktop Illustrator.')
+    lock=(job/'runner.lock').open('w')
+    fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     log = job / (stage + '.log')
     plan = job / 'live-plan.txt'
     execute(job / (stage + '.jsx'), activate=True)
@@ -36,13 +40,16 @@ def run(job, stage):
     result = log.read_text(encoding='utf-8')
     if 'ERROR:' in result:
         raise RuntimeError('Stage failed; inspect ' + str(log))
-    if stage != 'live':
+    if stage != 'live' or result.splitlines()[-1]=='DONE':
         if result.splitlines()[-1] != 'DONE':
             raise RuntimeError('Stage is incomplete; inspect ' + str(log))
         print(result)
         return
     files = [Path(unquote(p)) for p in plan.read_text(encoding='utf-8').splitlines()]
     command, cursor = job / 'live-command.txt', job / 'live-cursor.txt'
+    if start:command.write_text('play')
+    count=0
+    delay=json.loads((job/'job.json').read_text())['playback']['delay_ms']/1000
     print('Ready. Click Start / Resume in Illustrator. Ctrl+C pauses the runner.', flush=True)
     try:
         while True:
@@ -63,10 +70,14 @@ def run(job, stage):
                 command.write_text('pause')
             execute(files[index])
             if int(cursor.read_text().strip()) != index + 1:
-                raise RuntimeError('Batch did not complete; do not retry partial batches.')
+                raise RuntimeError('Batch interrupted; restart live to reconcile completed objects before continuing.')
             print(f'Batch {index + 1}/{len(files)}', flush=True)
             # This wait is OUTSIDE Illustrator: its event loop is free to paint and handle input.
-            time.sleep(0.5)
+            count+=1
+            if max_batches and count>=max_batches:
+                command.write_text('pause')
+                return
+            time.sleep(delay)
     except KeyboardInterrupt:
         command.write_text('pause')
         print('Paused. Check the cursor before resuming; never close user documents.', flush=True)
@@ -80,9 +91,11 @@ def run(job, stage):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--job-dir', required=True, type=Path)
-    parser.add_argument('--stage', required=True, choices=['inspect', 'trace', 'rebuild', 'structure', 'verify', 'live'])
+    parser.add_argument('--stage', required=True, choices=['inspect', 'trace', 'rebuild', 'structure', 'compose', 'export', 'verify', 'live'])
+    parser.add_argument('--start',action='store_true',help='Start the live controller automatically')
+    parser.add_argument('--max-batches',type=int,default=0,help='Pause after this many batches (0: all)')
     args = parser.parse_args()
     try:
-        run(args.job_dir.resolve(), args.stage)
+        run(args.job_dir.resolve(), args.stage,args.start,args.max_batches)
     except subprocess.CalledProcessError as error:
         raise SystemExit(error.stderr.strip())

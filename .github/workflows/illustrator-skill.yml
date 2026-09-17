@@ -1,0 +1,34 @@
+name: Illustrator Skill checks
+on:
+  push:
+    paths:
+      - 'skills/illustrator-flowchart-drawing/**'
+      - '.github/workflows/illustrator-skill.yml'
+  pull_request:
+    paths:
+      - 'skills/illustrator-flowchart-drawing/**'
+      - '.github/workflows/illustrator-skill.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  python-checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: skills/illustrator-flowchart-drawing
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.lock
+      - run: python -m compileall -q scripts setup.py
+      - run: python scripts/self_test.py
+      - run: python scripts/test_regressions.py
+      - run: python scripts/test_powerpoint.py
+      # Hosted runners lack Illustrator; test_desktop.py is a separate real-app gate.

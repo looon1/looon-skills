@@ -1,52 +1,62 @@
 # Illustrator / PowerPoint 参考图重建与实时绘制
 
-Illustrator 分支把参考图重建为可编辑 AI：复杂插画为矢量路径，文字、框线、箭头、虚线及简单背景使用原生对象。运行系统启动器的 `live` 阶段后先显示空白画板和控制面板，点击 `Start / Resume` 开始；支持暂停与单步绘制。系统启动器逐批调用 Illustrator，并在应用外等待半秒，让画布和控件在批次之间响应。
+普通文字、框线、箭头、虚线和基础几何一次创建为原生可编辑对象，只有复杂插画在 Illustrator 画布中分批出现。控制面板支持开始、暂停、单步与继续；等待发生在应用外，画布有时间刷新。
 
-本版本直接替换旧 SuperSVG 工作流，使用本机 Illustrator 描摹和 JSX；不需要服务器部署或模型权重。保留原 Skill 名称 `illustrator-flowchart-drawing`。
+本地 Illustrator 负责复杂插画描摹，无需上传到第三方识别服务、部署服务器或下载模型权重。参考图转录、插画区域和保真判断仍需要 Agent 看图核对，不是无人审核的自动复刻器。
 
-## 安装与使用
+## 安装
 
-将本目录复制到 Codex 的 `~/.codex/skills/illustrator-flowchart-drawing/`。Windows 的对应位置为 `%USERPROFILE%\.codex\skills\illustrator-flowchart-drawing\`。随后用自然语言指定参考图和输出目录，例如：
-
-> 使用 $illustrator-flowchart-drawing 将参考图高保真复刻为可编辑的 Adobe Illustrator 矢量图。严格保持原图的画布比例、布局、尺寸、位置、连线、箭头、线宽、颜色和层级，不擅自增删或改动。框体、节点、线条、符号和图标均重建为独立矢量对象；文本、框线、箭头、虚线等基础元素原生生成并一次出现，仅复杂插画逐步绘制。
->
-> 逐字核对全部数学公式，使用正规数学排版生成真正的上下标、分式、希腊字母、求和上下限、帽符号和运算符，禁止 Unicode 近似上下标或普通文本拼凑。变量使用数学斜体，并准确控制上下标字号、基线和间距。公式、正负号及普通文字统一使用真实粗体，变量同时为真实数学粗斜体，不得重复叠加或用描边模拟加粗。统一粗体是明确的样式调整，其余属性仍按原图。
->
-> 普通文字保留可编辑文本框；公式若无法稳定编辑，则将正规排版结果转为清晰矢量轮廓，并保留可重新生成的公式源码。完成后放大核查错字、乱码、缺笔画、公式错位、重复对象和线条遮挡，导出同画板比例的 PNG 复核，交付 AI、PNG、Master SVG、公式清单与源码。
-
-详细执行要求见 [公式排版与高保真验收](references/formulas-fidelity.md)。这是 Illustrator 分支的制图要求；已有 PowerPoint 分支仍按其专用流程执行。
-
-Python 依赖建议放在隔离环境内：
+将本目录放入 `~/.codex/skills/illustrator-flowchart-drawing/`；Windows 对应 `%USERPROFILE%\.codex\skills\illustrator-flowchart-drawing\`。在本目录运行：
 
 ```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python scripts/self_test.py
+python3 setup.py --formulas
+.venv/bin/python scripts/doctor.py --formulas
 ```
 
 Windows PowerShell：
 
 ```powershell
-py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe scripts\self_test.py
+py setup.py --formulas
+.\.venv\Scripts\python.exe scripts\doctor.py --formulas
 ```
 
-执行顺序为 `inspect → trace → 编写文字与 nativeLayout 清单 → rebuild → verify → live`。已有可编辑 AI 时可通过 `--editable-source` 和 `structure` 阶段重组。实时阶段必须运行系统启动器：Mac 用 `scripts/run-illustrator-mac.py --job-dir /absolute/job --stage live`，Windows 用 `scripts/run-illustrator.ps1 -JobDir C:\Figures\job -Stage live`；单独运行 `live.jsx` 只准备空白画板和控制面板。完整入口见 [SKILL.md](SKILL.md)，Windows 命令见 [Windows 与实时绘制](references/windows-live.md)。`trace.ai` 的文字仍是描摹路径，只用于内部检查，不能交付为成品。
+需要 Python 3.10–3.14 和桌面 Illustrator。`setup.py` 仅安装锁定版本的 Python 依赖到 `.venv`。公式另需已安装的 TeX Live：`xelatex`、`dvisvgm`、`kpsewhich`、`unicode-math`、`standalone`、XITS 字体；无公式可省略 `--formulas`。不自动安装应用或修改系统设置。
 
-## 输出与验证
+## 使用提示词
 
-- `figure.ai`：完整主 AI，普通文字保留原生 `TextFrame`；公式为稳定可编辑数学结构或附源码的矢量轮廓。
-- `master.svg`、`preview.png`：从整合公式后的最终主图导出，画板范围与比例一致。早期脚本产生的 `figure.svg` 不自动算作最终 Master SVG。
-- `formulas.json` 及 `.tex` / `.mml` 等源码：逐条对应公式、位置、实际字体、排版设置、编辑方式与核验状态；无公式时明确为空清单。
-- `figure-live.ai`、`preview-live.png`：逐步创建得到的独立成品。
-- 任务目录中的各阶段日志：核对文本内容、路径、分组与零位图。
+> 使用 $illustrator-flowchart-drawing 将参考图高保真复刻为可编辑的 Adobe Illustrator 矢量图。严格保持原图的画布比例、布局、尺寸、位置、连线、箭头、线宽、颜色和层级，不擅自增删或改动。框体、节点、线条、符号和图标均重建为独立矢量对象；文本、框线、箭头、虚线等基础元素原生生成并一次出现，仅复杂插画逐步绘制。
+>
+> 逐字核对全部数学公式，使用正规数学排版生成真正的上下标、分式、希腊字母、求和上下限、帽符号和运算符，禁止 Unicode 近似上下标或普通文本拼凑。变量使用数学斜体，准确控制上下标字号、基线和间距。公式、正负号及普通文字统一使用真实粗体，变量为真实数学粗斜体，不得重复叠加或用描边模拟加粗。统一粗体是明确的样式调整，其余属性仍按原图。
+>
+> 普通文字保留可编辑文本框；公式无法稳定编辑时，将正规排版结果转为清晰矢量轮廓，并保留可重新生成的公式源码。完成后放大核查错字、乱码、缺笔画、公式错位、重复对象和线条遮挡，导出同画板比例的 PNG 复核，交付 AI、PNG、Master SVG、公式清单与源码。
 
-2026-09-10 在 macOS Illustrator 29.5.1 中以复杂机制图验证：首批完整创建 45 个原生文本框及框线、箭头、虚线和背景，复杂插画为零；矩形框有 4 个锚点，虚线保留原生描边属性。后续只逐步创建复杂插画，并通过暂停、单步与继续检查。最终成品包含 2,290 条路径、45 个文本框和 20 个插画组，位图及置入对象为零；保存回读后的 PNG 与完成稿逐像素一致。13 项准备脚本测试通过。每个新任务仍须按 SKILL.md 验收。Windows 提供同一 JSX 配合 PowerShell/COM 启动器，尚未在 Windows 实机运行。逐步绘制使用预先核验的矢量几何，不代表模拟人类每一笔动作。
+入口见 [SKILL.md](SKILL.md)，字段见 [清单格式](references/manifest.md)，平台命令见 [实时启动器](references/windows-live.md)。含公式时内置 XeLaTeX → XDV → dvisvgm 排版与复合矢量导入，不描摹公式截图。普通文字按真实字号/基线定位，多行与旋转保持可编辑；缺字、字体不是真粗体时明确失败。
 
-文字内容与几何关系需要逐项对照原图；字体与阴影可能有细微差异。文件可编辑不等于原图像素级一致。适用输入为单页不透明 RGB 图像；透明、CMYK、特殊效果与复杂剪切需要单独处理。
+## 工作流与输出
 
-2026-09-17 整合了高保真、真实粗体、正规数学排版和完整交付规则。现有 JSX 的 `labels` 仍是普通文字接口，未内置数学排版器、公式导入或最终 Master SVG 的自动生成；公式任务按新增参考文档执行并在目标应用中验证，不能引用早期测试来宣称公式流程已通过。
+- 参考图：`inspect → trace → 编写并核对 manifest → rebuild → verify → live → verify`。
+- 已有完整原生对象清单：`compose → verify → live → verify`。
+- 本 Skill 旧版未整理结构的 AI：复制为任务输入后 `structure`，迁移旧文字度量并原生重建结构。
+- `figure.ai` / `figure-live.ai`：最终可编辑 AI；普通文字是 TextFrame，公式是带源码的矢量轮廓。
+- `preview.png`、`master.svg`：同一最终已保存并重新打开的 AI 导出，保持画板比例；SVG 普通文字保留 text 元素。
+- `formulas.json`、`formulas/<ID>/source.tex`、`outline.svg`：公式完整源码、位置、字体文件指纹、引擎、编辑方式和核验状态；无公式为 `[]`。
+- `fonts.json`、`native-audit.json`、`verification.json`：字体证据、原生对象回读、导出文件与差异检查。
+
+可恢复的批次保存稳定对象 ID、输入指纹和磁盘检查点。重新运行相同任务可跳过已创建对象；更换清单或脚本时使用新任务目录。首批始终是静态对象；后续默认每批 8 项、应用外间隔 500 ms。复合字形和剪切组保持完整，不拆散孔洞。
+
+## 测试和限制
+
+```bash
+.venv/bin/python scripts/self_test.py
+.venv/bin/python scripts/test_regressions.py
+.venv/bin/python scripts/test_powerpoint.py
+# 需要真实桌面 Illustrator；创建独立测试文件，输出目录必须尚不存在：
+.venv/bin/python scripts/test_desktop.py --output-dir /absolute/new-desktop-test
+```
+
+CI 执行 Python 检查，不宣称托管环境运行了 Illustrator。详细实测证据见 [验证记录](references/validation.md)。Mac Illustrator 29.5.1 已执行本次原生公式、文字、复合孔洞、剪切、播放与恢复验收；Windows 实机验收待可连接环境。
+
+自动检查结构与文件一致性，不能判定公式科学含义或与参考图完全一致。局部字体渲染可能产生少量边缘像素差异；原图保真、源稿到实时稿、AI 保存回读、SVG 回读分别记录。支持的对象与输入边界见 SKILL，不静默栅格化不支持内容。
 
 ## PowerPoint 分支
 
