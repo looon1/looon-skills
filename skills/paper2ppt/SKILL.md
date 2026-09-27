@@ -1,6 +1,6 @@
 ---
 name: paper2ppt
-description: Turn a scientific paper or PDF into a source-grounded Chinese journal-club, lab-meeting, thesis-seminar, or paper-sharing PPTX with auditable Figure extraction, panel-level crops, Results-section argument mapping, complete-main-Figure coverage when requested, and selectable academic visual systems. Use when the user asks for paper PPT, paper2ppt, journal club slides, 文献精讲, 逐图讲解, 主图全部panel, 论文汇报PPT, 拆分论文Figure/panel, 蓝色简约/极简/Nature风/绿色科研PPT, or a presentation that must keep panel labels, axes, legends, scale bars, cohorts, captions, slide claims, and oral notes correctly aligned. Supports rule-only dry runs, PDF-native extraction, OCR/layout-assisted panel proposals, visual review, semantic panel groups, manifest-driven cropping, ten locked style presets, and optional downstream Crafter reconstruction for diagram-like panels.
+description: Turn a scientific paper or PDF into a source-grounded Chinese journal-club, lab-meeting, thesis-seminar, or paper-sharing PPTX with auditable Figure extraction, panel-level crops, Results-section argument mapping, complete-main-Figure coverage by default for full-paper journal clubs, and selectable academic visual systems. Use when the user asks for paper PPT, paper2ppt, journal club slides, 文献精讲, 逐图讲解, 主图全部panel, 论文汇报PPT, 拆分论文Figure/panel, 蓝色简约/极简/Nature风/绿色科研PPT, or a presentation that must keep panel labels, axes, legends, scale bars, cohorts, captions, slide claims, and oral notes correctly aligned. Supports rule-only dry runs, PDF-native extraction, OCR/layout-assisted panel proposals, visual review, semantic panel groups, manifest-driven cropping, ten locked style presets, and optional downstream Crafter reconstruction for diagram-like panels.
 ---
 
 # Paper2PPT
@@ -14,7 +14,7 @@ Build the evidence chain before building slides. Never let slide layout determin
 - Read [references/deck-workflow.md](references/deck-workflow.md) before planning or creating the PPTX.
 - Read [references/paper-interpretation.md](references/paper-interpretation.md) before writing slide claims, Figure explanations, or speaker notes.
 - Read [references/reference-language-notes.md](references/reference-language-notes.md) when the user supplies a PPTX as a language, density, or speaker-note reference, or requests formal academic oral-report wording.
-- Read [references/precision-journal-club.md](references/precision-journal-club.md) when the user requests 精讲, 逐图讲解, every/main Figure panel, or Results-heading-led structure.
+- Read [references/precision-journal-club.md](references/precision-journal-club.md) for full-paper journal-club and lab-meeting requests, including 精讲, 逐图讲解, every/main Figure panel, or Results-heading-led structure.
 - Read [references/dry-run-evaluation.md](references/dry-run-evaluation.md) when the user asks to define rules, test the Skill, or evaluate it without producing a PPTX.
 - Read [references/style-system.md](references/style-system.md) before choosing a visual style or writing a deck plan.
 - Read [references/nature-green-journal-club.md](references/nature-green-journal-club.md) when the user asks for the green version, selects `nature_green_journal_club`, or supplies the previously approved green journal-club reference.
@@ -72,11 +72,13 @@ Classify as `discovery`, `methods`, `resource`, `clinical`, `materials`, or `rev
 
 Choose `coverage_mode` before selecting evidence:
 
-- `selective`: use only panels needed for the requested summary;
+- `selective`: use selected panels only when the user explicitly requests a summary, selected findings, selected Figures, or a narrowed scope; record that request in the deck brief;
 - `full_main_figures`: enumerate and map every labeled panel in every main-text Figure;
 - `all_figures`: include main, Extended Data, and Supplementary Figures.
 
-Treat 精讲, 逐图讲解, 主图全部 panel, and equivalent wording as `full_main_figures`. Do not silently downgrade it to `selective`. Follow [references/precision-journal-club.md](references/precision-journal-club.md) and create `coverage_contract.json`.
+For a supplied-paper 组会汇报, 文献汇报, journal club, 精讲, or 逐图讲解, default to `full_main_figures` unless the user explicitly narrows the scope. A request for a visual style (including green) does not authorize selective coverage. Every Figure being represented by one panel is not full coverage. Follow [references/precision-journal-club.md](references/precision-journal-club.md), inventory all main-text panels before selecting layouts, and create `coverage_contract.json`.
+
+Treat “没有把所有的图都用上” or “补齐全部子图” as a coverage correction: reconcile the authoritative inventory against the existing slides, then insert missing panels into their scientific Results sequence with panel-specific notes. Do not satisfy it by appending unreadable whole-Figure thumbnails. State whether the scope covers main Figures only or also supplementary material; a main-text PDF does not establish supplementary coverage.
 
 ### 3. Lock the deck contract and visual system
 

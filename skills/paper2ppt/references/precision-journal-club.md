@@ -1,6 +1,6 @@
 # Precision journal-club contract
 
-Use this contract for 精讲, 逐图讲解, 主图全部 panel, or equivalent requests. It prevents a selective-summary deck from being presented as a full paper explanation.
+Use this contract by default for supplied-paper journal-club or lab-meeting decks, including 精讲, 逐图讲解, 主图全部 panel, and equivalent requests. It prevents a selective-summary deck from being presented as a full paper explanation.
 
 ## 1. Lock the coverage mode
 
@@ -10,7 +10,9 @@ Record one mode in `coverage_contract.json`:
 - `full_main_figures`: every labeled panel in every main-text Figure;
 - `all_figures`: main, Extended Data, and Supplementary Figures.
 
-Default 精讲 to `full_main_figures`. A page limit does not authorize panel omission; increase slide count, combine compatible panels, or ask the user to relax coverage.
+Default full-paper 组会汇报 / 文献汇报 to `full_main_figures`; use `selective` only for an explicitly requested summary or narrower selection, recorded in the deck brief. A style preference does not narrow content scope. Let coverage and readability determine slide count when no count is fixed. If a user-specified page or time limit conflicts with complete readable coverage, resolve that conflict with the user instead of silently dropping panels or exceeding a fixed count.
+
+Separate source availability from coverage: list main, Extended Data, and Supplementary Figure inventories independently. If supplementary artwork is absent, disclose that limitation and claim only verified main-Figure coverage. For an explicit `all_figures` request, retrieve missing material through authorized routes or report the missing Figure ids; do not relabel `full_main_figures` as complete all-Figure coverage.
 
 ## 2. Build the authoritative panel inventory
 
@@ -23,7 +25,7 @@ For every in-scope Figure record:
 - panel status: `accepted`, `needs_review`, or `exception`;
 - source bbox, caption segment, required shared assets, and review note.
 
-Coverage is calculated against the authoritative expected-label set, not against the crops the pipeline happened to produce.
+Coverage is calculated against the authoritative expected-label set, not against the crops the pipeline happened to produce. Count an unlabeled whole Figure once. Keep separate totals for Figures represented, expected panels, and panels actually explained; do not use Figure-level presence as evidence of panel completeness.
 
 ## 3. Use Results subsections as the argument spine
 

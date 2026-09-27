@@ -72,6 +72,12 @@ For every evidence slide, also record `projected_asset_fill_ratio` and `projecte
 - `underfilled_evidence_frame`
 - `unverified_remote_result`
 
+## Coverage readback before delivery
+
+Reconcile the caption/artwork-derived inventory against actual exported slide images and notes, not just the planning JSON. For each expected panel, record its slide number(s), visible source asset or complete set of disclosed fragments, and panel-specific spoken explanation. A mention in text, a section divider, or one selected panel from each Figure does not count as panel coverage. Report missing panel ids explicitly and do not claim full coverage while any remain unresolved. Repeated locators and zooms count once. Keep source-availability exceptions separate from completed coverage.
+
+When repairing omissions, verify both the added panels and the surrounding reading order, shared legends, and transitions. Dense panels require readable enlarged views with intact axes and category names, not merely a small whole-Figure overview.
+
 ## Delivery claim
 
 Use `panel_verified` only when every inserted panel passed the manifest and final-slide gates. Use `argument_verified` only when every title, Figure explanation, and spoken statistic passed the interpretation gates. Use `figure_level_only` when compound Figures were not reliably split. Use `partial_review_required` when any inserted crop or interpretation still needs user confirmation.

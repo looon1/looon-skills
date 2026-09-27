@@ -14,6 +14,8 @@ Inspect every slide and every notes page. Record:
 
 Learn the pattern, not the paper-specific wording. Do not preserve errors merely because they occur in the reference.
 
+For a reference supplied with a missing-Figure correction, identify how it groups related results, aligns comparisons, and continues dense analyses across pages. Apply those patterns while preserving the target paper’s complete panel inventory. Keep a previously requested visual preset unless the user asks to replace it. A reference’s short length, missing notes, or selective content does not override the target coverage requirement.
+
 ## 2. Results-led chapter structure
 
 - Use the paper's Results subsections as the major chapters.

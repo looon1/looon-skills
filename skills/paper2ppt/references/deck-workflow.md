@@ -30,7 +30,7 @@ For a default journal club, make the audience understand the paper's question, d
 - `materials`: design principle → fabrication/characterization → performance → mechanism → durability/generalization.
 - `review`: scope → evidence map → agreement/conflict → gaps → practical synthesis.
 
-## Default 9-12 slide structure
+## Explicit selective-summary example: 9-12 slides
 
 1. Minimal title and citation.
 2. Research background and reproducibility problem.
@@ -42,7 +42,7 @@ For a default journal club, make the audience understand the paper's question, d
 
 Do not add an agenda unless the deck is long enough to benefit.
 
-This default applies only to `selective` mode. In `full_main_figures`, panel coverage determines slide count; do not compress the paper into 9–12 slides by omitting panels.
+This example applies only when the user explicitly requests `selective` coverage. Full-paper journal-club requests default to `full_main_figures`; panel coverage and readability determine slide count unless the user fixes a count. Do not treat the example, an aesthetic preference, or a desire for brevity as permission to omit panels.
 
 ## Slide copy
 
